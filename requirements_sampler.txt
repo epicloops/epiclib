@@ -1,0 +1,4 @@
+SQLAlchemy==0.9.3
+boto==2.27.0
+psycopg2==2.5.2
+salt==2014.1.0

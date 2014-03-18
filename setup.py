@@ -52,16 +52,16 @@ class PyTest(TestCommand):
 
 class Install(install):
     user_options = install.user_options + [
-        ('samplermod', None,
+        ('install-samplermod', None,
          'Set flag to install epicsampler salt extension module.'),
     ]
 
     def initialize_options(self):
         install.initialize_options(self)
-        self.samplermod = 0
+        self.install_samplermod = None
 
     def run(self):
-        if self.samplermod:
+        if self.install_samplermod:
             src = os.path.join(here, 'epic', 'sampler', 'module.py')
             minion_opts = salt.config.minion_config(
                     os.environ.get('SALT_MINION_CONFIG', '/etc/salt/minion'))
@@ -72,6 +72,13 @@ class Install(install):
                 os.makedirs(os.path.dirname(dest))
 
             shutil.copy(src, dest)
+        else:
+            self.distribution.metadata.install_requires + [
+                'Scrapy',
+                'scrapylib',
+                'pyechonest',
+                'apache-libcloud',
+            ]
         # Run install.run
         install.run(self)
 
@@ -103,11 +110,7 @@ setup(
         'boto',
         'SQLAlchemy',
         'psycopg2',
-        'Scrapy',
-        'scrapylib',
-        'pyechonest',
         'salt',
-        'apache-libcloud',
     ],
     tests_require=['pytest'],
     test_suite='test.test_epic',

@@ -265,7 +265,7 @@ def provision(*args, **kwargs):
                             timeout=300)
     salt.output.display_output(data, '', MASTER_OPTS)
 
-    log.info('Installing pip.')
+    log.info('Downloading pip install script.')
     data = local_client.cmd(minions,
                             'state.single',
                             arg=[],
@@ -278,6 +278,7 @@ def provision(*args, **kwargs):
                             timeout=300)
     salt.output.display_output(data, '', MASTER_OPTS)
 
+    log.info('Installing pip.')
     data = local_client.cmd(minions,
                             'state.single',
                             arg=[],
@@ -290,7 +291,7 @@ def provision(*args, **kwargs):
                             timeout=300)
     salt.output.display_output(data, '', MASTER_OPTS)
 
-    log.info('Installing epic.')
+    log.info('Cloning epic git repo.')
     data = local_client.cmd(minions,
                             'state.single',
                             arg=[],
@@ -304,12 +305,27 @@ def provision(*args, **kwargs):
                             expr_form='list',
                             timeout=300)
     salt.output.display_output(data, '', MASTER_OPTS)
+
+    log.info('Installing epic requirements.')
     data = local_client.cmd(minions,
                             'state.single',
                             arg=[],
                             kwarg={
                                 'fun': 'cmd.run',
-                                'name': 'pip install -r ./epic/requirements.txt ./epic --install-option="--samplermod"',
+                                'name': 'pip install -r ./epic/requirements_sampler.txt',
+                                'cwd': '/tmp',
+                            },
+                            expr_form='list',
+                            timeout=300)
+    salt.output.display_output(data, '', MASTER_OPTS)
+
+    log.info('Installing epic.')
+    data = local_client.cmd(minions,
+                            'state.single',
+                            arg=[],
+                            kwarg={
+                                'fun': 'cmd.run',
+                                'name': 'pip install ./epic --install-option="--install-samplermod"',
                                 'cwd': '/tmp',
                             },
                             expr_form='list',
