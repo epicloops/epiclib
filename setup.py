@@ -85,11 +85,11 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'epicdb = epic:EpicdbCmd.run',
-            'epicbot = epic:EpicbotCmd.run',
-            'epicsampler = epic:EpicsamplerCmd.run',
-            'epicqry = epic:EpicqryCmd.run',
-            'epicpkg = epic:EpicpkgCmd.run',
+            'epicdb = epic:cmds:epicdb:EpicdbCmd.run',
+            'epicbot = epic:cmds:epicbot:EpicbotCmd.run',
+            'epicsampler = epic:cmds:epicsampler:EpicsamplerCmd.run',
+            'epicqry = epic:cmds:epicqry:EpicqryCmd.run',
+            'epicpkg = epic:cmds:epicpkg:EpicpkgCmd.run',
         ],
     },
     packages=find_packages(),

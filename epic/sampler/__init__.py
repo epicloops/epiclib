@@ -363,7 +363,7 @@ def run(crawl_start, spider, offset=0, qty=-1, *args, **kwargs):
     envars = {
         'AWS_ACCESS_KEY_ID': os.environ.get('AWS_ACCESS_KEY_ID', None),
         'AWS_SECRET_ACCESS_KEY': os.environ.get('AWS_SECRET_ACCESS_KEY', None),
-        'EPIC_S3_BUCKET': os.environ('EPIC_S3_BUCKET', None),
+        'EPIC_S3_BUCKET': os.environ.get('EPIC_S3_BUCKET', None),
     }
     data = local_client.run_job(minions,
                                 'epicsampler.run',
