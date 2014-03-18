@@ -52,20 +52,16 @@ class PyTest(TestCommand):
 
 class Install(install):
     user_options = install.user_options + [
-        ('install-sampler=', None,
-         'Set flag to install salt sampler extension module.'),
+        ('samplermod', None,
+         'Set flag to install epicsampler salt extension module.'),
     ]
 
     def initialize_options(self):
         install.initialize_options(self)
-        self.install_sampler = None
-
-    def finalize_options(self):
-        install.finalize_options(self)
-        assert self.install_sampler in (None, '1'), 'install_sampler must be 1'
+        self.samplermod = 0
 
     def run(self):
-        if self.install_sampler:
+        if self.samplermod:
             src = os.path.join(here, 'epic', 'sampler', 'module.py')
             minion_opts = salt.config.minion_config(
                     os.environ.get('SALT_MINION_CONFIG', '/etc/salt/minion'))

@@ -185,7 +185,10 @@ def _servers_up():
     '''
     return ping(output=False).get('up', [])
 
-def provision():
+def provision(*args, **kwargs):
+    '''
+    Provision available servers
+    '''
     local_client = _get_local_client()
 
     minions = _servers_up()
@@ -195,55 +198,61 @@ def provision():
 
     log.info('Installing python2.')
     data = local_client.cmd(minions,
-                            'aptpkg.install',
+                            'state.single',
                             arg=[],
                             kwarg={
-                                'name': 'python'
+                                'fun': 'pkg.installed',
+                                'name': 'python',
                             },
                             expr_form='list',
-                            timeout=[300])
+                            timeout=300)
     salt.output.display_output(data, '', MASTER_OPTS)
 
     log.info('Installing python-dev.')
     data = local_client.cmd(minions,
-                            'aptpkg.install',
+                            'state.single',
                             arg=[],
                             kwarg={
-                                'name': 'python-dev'
+                                'fun': 'pkg.installed',
+                                'name': 'python-dev',
                             },
                             expr_form='list',
-                            timeout=[300])
+                            timeout=300)
     salt.output.display_output(data, '', MASTER_OPTS)
 
     log.info('Installing libpq-dev.')
     data = local_client.cmd(minions,
-                            'aptpkg.install',
+                            'state.single',
                             arg=[],
                             kwarg={
-                                'name': 'libpq-dev'
+                                'fun': 'pkg.installed',
+                                'name': 'libpq-dev',
                             },
                             expr_form='list',
-                            timeout=[300])
+                            timeout=300)
     salt.output.display_output(data, '', MASTER_OPTS)
 
     log.info('Adding apt repo deb http://mp3splt.sourceforge.net/repository '
              'precise main.')
     data = local_client.cmd(minions,
-                            'aptpkg.mod_repo',
+                            'state.single',
                             arg=[],
                             kwarg={
-                                'repo': 'deb http://mp3splt.sourceforge.net/repository precise main'
+                                'fun': 'pkgrepo.managed',
+                                'name': 'deb http://mp3splt.sourceforge.net/repository precise main',
                             },
                             expr_form='list',
-                            timeout=[300])
+                            timeout=300)
     salt.output.display_output(data, '', MASTER_OPTS)
 
     log.info('Installing libmp3splt0-mp3, libmp3splt0-ogg, libmp3splt0-flac, '
              'mp3splt.')
     data = local_client.cmd(minions,
-                            'aptpkg.install',
+                            'state.single',
                             arg=[],
                             kwarg={
+                                'fun': 'pkg.installed',
+                                'name': None,
                                 'pkgs': [
                                     'libmp3splt0-mp3',
                                     'libmp3splt0-ogg',
@@ -253,52 +262,58 @@ def provision():
                                 'skip_verify': True
                             },
                             expr_form='list',
-                            timeout=[300])
+                            timeout=300)
     salt.output.display_output(data, '', MASTER_OPTS)
 
     log.info('Installing pip.')
     data = local_client.cmd(minions,
-                            'cmd.run',
+                            'state.single',
                             arg=[],
                             kwarg={
+                                'fun': 'cmd.run',
                                 'cwd': '/tmp',
                                 'name': 'wget https://raw.github.com/pypa/pip/master/contrib/get-pip.py',
                             },
                             expr_form='list',
-                            timeout=[300])
+                            timeout=300)
     salt.output.display_output(data, '', MASTER_OPTS)
 
     data = local_client.cmd(minions,
-                            'cmd.run',
+                            'state.single',
                             arg=[],
                             kwarg={
+                                'fun': 'cmd.run',
                                 'cwd': '/tmp',
                                 'name': 'python get-pip.py',
                             },
                             expr_form='list',
-                            timeout=[300])
+                            timeout=300)
     salt.output.display_output(data, '', MASTER_OPTS)
 
     log.info('Installing epic.')
     data = local_client.cmd(minions,
-                            'git.clone',
+                            'state.single',
                             arg=[],
                             kwarg={
-                                'cwd': '/tmp/epic',
-                                'repository': 'https://github.com/ajw0100/epic.git',
+                                'fun': 'git.latest',
+                                'name': 'https://github.com/ajw0100/epic.git',
+                                'target': '/tmp/epic',
+                                'force': True,
+                                'force_checkout': True,
                             },
                             expr_form='list',
-                            timeout=[300])
+                            timeout=300)
     salt.output.display_output(data, '', MASTER_OPTS)
     data = local_client.cmd(minions,
-                            'cmd.run',
+                            'state.single',
                             arg=[],
                             kwarg={
-                                'name': 'pip install -r ./epic/requirements.txt ./epic',
+                                'fun': 'cmd.run',
+                                'name': 'pip install -r ./epic/requirements.txt ./epic --install-option="--samplermod"',
                                 'cwd': '/tmp',
                             },
                             expr_form='list',
-                            timeout=[300])
+                            timeout=300)
     salt.output.display_output(data, '', MASTER_OPTS)
 
 def run(crawl_start, spider, offset=0, qty=-1, *args, **kwargs):
