@@ -325,7 +325,7 @@ def provision(*args, **kwargs):
                             arg=[],
                             kwarg={
                                 'fun': 'cmd.run',
-                                'name': 'pip install ./epic --install-option="--install-samplermod"',
+                                'name': 'SAMPLER_INSTALL=true pip install ./epic',
                                 'cwd': '/tmp',
                             },
                             expr_form='list',

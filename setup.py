@@ -8,7 +8,6 @@ import shutil
 
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
-from setuptools.command.install import install
 
 import salt.config
 
@@ -36,6 +35,30 @@ Documentation
 The full documentation is at http://epic.rtfd.org.'''
 history = open('HISTORY.rst').read().replace('.. :changelog:', '')
 
+install_requires=[
+    'boto',
+    'SQLAlchemy',
+    'psycopg2',
+    'salt',
+]
+if os.environ.get('SAMPLER_INSTALL', None):
+    src = os.path.join(here, 'epic', 'sampler', 'module.py')
+    minion_opts = salt.config.minion_config(
+            os.environ.get('SALT_MINION_CONFIG', '/etc/salt/minion'))
+    dest = os.path.join(minion_opts['extension_modules'], 'modules',
+                        'epicsampler.py')
+
+    if not os.path.exists(os.path.dirname(dest)):
+        os.makedirs(os.path.dirname(dest))
+
+    shutil.copy(src, dest)
+else:
+    install_requires += [
+        'Scrapy',
+        'scrapylib',
+        'pyechonest',
+        'apache-libcloud',
+    ]
 
 class PyTest(TestCommand):
 
@@ -49,39 +72,6 @@ class PyTest(TestCommand):
         errno = pytest.main(self.test_args)
         sys.exit(errno)
 
-
-class Install(install):
-    user_options = install.user_options + [
-        ('install-samplermod', None,
-         'Set flag to install epicsampler salt extension module.'),
-    ]
-
-    def initialize_options(self):
-        install.initialize_options(self)
-        self.install_samplermod = None
-
-    def run(self):
-        if self.install_samplermod:
-            src = os.path.join(here, 'epic', 'sampler', 'module.py')
-            minion_opts = salt.config.minion_config(
-                    os.environ.get('SALT_MINION_CONFIG', '/etc/salt/minion'))
-            dest = os.path.join(minion_opts['extension_modules'], 'modules',
-                                'epicsampler.py')
-
-            if not os.path.exists(os.path.dirname(dest)):
-                os.makedirs(os.path.dirname(dest))
-
-            shutil.copy(src, dest)
-        else:
-            self.distribution.metadata.install_requires + [
-                'Scrapy',
-                'scrapylib',
-                'pyechonest',
-                'apache-libcloud',
-            ]
-        # Run install.run
-        install.run(self)
-
 setup(
     name='epic',
     version=find_version('epic', '__init__.py'),
@@ -92,7 +82,6 @@ setup(
     url='https://github.com/ajw0100/epic',
     cmdclass={
         'test': PyTest,
-        'install': Install,
     },
     entry_points={
         'console_scripts': [
@@ -106,12 +95,7 @@ setup(
     packages=find_packages(),
     package_dir={'epic': 'epic'},
     include_package_data=True,
-    install_requires=[
-        'boto',
-        'SQLAlchemy',
-        'psycopg2',
-        'salt',
-    ],
+    install_requires=install_requires,
     tests_require=['pytest'],
     test_suite='test.test_epic',
     extras_require={
