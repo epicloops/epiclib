@@ -41,6 +41,7 @@ install_requires=[
     'psycopg2',
     'salt',
 ]
+console_scripts = []
 if os.environ.get('SAMPLER_INSTALL', None):
     src = os.path.join(here, 'epic', 'sampler', 'module.py')
     minion_opts = salt.config.minion_config(
@@ -53,12 +54,19 @@ if os.environ.get('SAMPLER_INSTALL', None):
 
     shutil.copy(src, dest)
 else:
-    install_requires += [
+    install_requires.extend([
         'Scrapy',
         'scrapylib',
         'pyechonest',
         'apache-libcloud',
-    ]
+    ])
+    console_scripts.extend([
+        'epicdb = epic.cmds.epicdb:EpicdbCmd.run',
+        'epicbot = epic.cmds.epicbot:EpicbotCmd.run',
+        'epicsampler = epic.cmds.epicsampler:EpicsamplerCmd.run',
+        'epicqry = epic.cmds.epicqry:EpicqryCmd.run',
+        'epicpkg = epic.cmds.epicpkg:EpicpkgCmd.run',
+    ])
 
 class PyTest(TestCommand):
 
@@ -80,27 +88,15 @@ setup(
     author='A.J. Welch',
     author_email='awelch0100@gmail.com',
     url='https://github.com/ajw0100/epic',
-    cmdclass={
-        'test': PyTest,
-    },
-    entry_points={
-        'console_scripts': [
-            'epicdb = epic:cmds:epicdb:EpicdbCmd.run',
-            'epicbot = epic:cmds:epicbot:EpicbotCmd.run',
-            'epicsampler = epic:cmds:epicsampler:EpicsamplerCmd.run',
-            'epicqry = epic:cmds:epicqry:EpicqryCmd.run',
-            'epicpkg = epic:cmds:epicpkg:EpicpkgCmd.run',
-        ],
-    },
+    cmdclass={'test': PyTest,},
+    entry_points={'console_scripts': console_scripts,},
     packages=find_packages(),
     package_dir={'epic': 'epic'},
     include_package_data=True,
     install_requires=install_requires,
     tests_require=['pytest'],
     test_suite='test.test_epic',
-    extras_require={
-        'testing': ['pytest'],
-    },
+    extras_require={'testing': ['pytest'],},
     license='MIT',
     zip_safe=False,
     keywords='epic',
