@@ -42,6 +42,7 @@ install_requires=[
     'salt',
 ]
 console_scripts = []
+
 if os.environ.get('SAMPLER_INSTALL', None):
     src = os.path.join(here, 'epic', 'sampler', 'module.py')
     minion_opts = salt.config.minion_config(

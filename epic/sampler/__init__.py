@@ -332,6 +332,15 @@ def provision(*args, **kwargs):
                             timeout=300)
     salt.output.display_output(data, '', MASTER_OPTS)
 
+    log.info('Refreshing modules.')
+    data = local_client.cmd(minions,
+                            'saltutil.refresh_modules',
+                            arg=[],
+                            kwarg={},
+                            expr_form='list',
+                            timeout=300)
+    salt.output.display_output(data, '', MASTER_OPTS)
+
 def run(crawl_start, spider, offset=0, qty=-1, *args, **kwargs):
     '''
     Run sampler across all available servers.
