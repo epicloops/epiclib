@@ -155,7 +155,7 @@ def run(crawl_start, spider,
     conn = _connection.S3Connection(
             os.environ.get('AWS_ACCESS_KEY_ID', None),
             os.environ.get('AWS_SECRET_ACCESS_KEY', None))
-    bkt = _bucket.Bucket(conn, os.environ('EPIC_S3_BUCKET', None))
+    bkt = _bucket.Bucket(conn, os.environ.get('EPIC_S3_BUCKET', None))
 
     log.info('Querying S3 and calculating workload.')
     tracks_all = (k for k in bkt.list(bot_dir))
