@@ -364,6 +364,7 @@ def run(crawl_start, spider, offset=0, qty=-1, *args, **kwargs):
         'AWS_ACCESS_KEY_ID': os.environ.get('AWS_ACCESS_KEY_ID', None),
         'AWS_SECRET_ACCESS_KEY': os.environ.get('AWS_SECRET_ACCESS_KEY', None),
         'EPIC_S3_BUCKET': os.environ.get('EPIC_S3_BUCKET', None),
+        'SQLALCHEMY_DATABASE_URI': os.environ.get('SQLALCHEMY_DATABASE_URI', None),
     }
     data = local_client.run_job(minions,
                                 'epicsampler.run',
