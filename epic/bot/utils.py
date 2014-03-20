@@ -15,7 +15,7 @@ class S3FileStore(object):
         self.settings = crawler.settings
         self.aws_access_key_id = self.settings.get('AWS_ACCESS_KEY_ID')
         self.aws_secret_access_key = self.settings.get('AWS_SECRET_ACCESS_KEY')
-        self.bucket = self.settings.get('S3_BUCKET')
+        self.bucket = self.settings.get('AWS_S3_BUCKET')
         self.prefix = {}
 
     @classmethod

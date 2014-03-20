@@ -7,6 +7,7 @@ import os
 import datetime
 from collections import OrderedDict as _OrderedDict
 import curses
+import json
 
 import salt.config
 import salt.cloud
@@ -102,7 +103,8 @@ def up(profile, servers=1, display_ssh_output=False, *args, **kwargs):
         # manually for now.
         cloud_client.profile(profile=profile, names=names,
             parallel=True, display_ssh_output=display_ssh_output,
-            script_args='git v2014.1.0', show_deploy_args=True)
+            script_args='git v2014.1.0',
+            show_deploy_args=True)
     except salt.cloud.exceptions.SaltCloudConfigError, e:
         log.info(e)
         return
@@ -308,19 +310,23 @@ def provision(*args, **kwargs):
                             timeout=300)
     salt.output.display_output(data, '', MASTER_OPTS)
 
-    log.info('Setting environment variables.')
-    environ = {
+    log.info('Writing config file.')
+    config = {
         'AWS_ACCESS_KEY_ID': settings.AWS_ACCESS_KEY_ID,
         'AWS_SECRET_ACCESS_KEY': settings.AWS_SECRET_ACCESS_KEY,
-        'EPIC_S3_BUCKET': settings.S3_BUCKET,
+        'AWS_S3_BUCKET': settings.AWS_S3_BUCKET,
         'SQLALCHEMY_DATABASE_URI': settings.SQLALCHEMY_DATABASE_URI,
     }
     data = local_client.cmd(minions,
-                            'environ.setenv',
+                            'state.single',
                             arg=[],
                             kwarg={
-                                'environ': environ,
-                                'update_minion': True
+                                'fun': 'file.managed',
+                                'name': '/home/ubuntu/.epic/config',
+                                'makedirs': True,
+                                'user': 'ubuntu',
+                                'group': 'ubuntu',
+                                'contents': json.dumps(config)
                             },
                             expr_form='list',
                             timeout=300)
@@ -354,12 +360,6 @@ def run(crawl_start, spider, offset=0, qty=-1, *args, **kwargs):
 
     log.info('Running epicsampler.run across available servers.')
     sampler_start = '{:%Y-%m-%dT%H-%M-%S}'.format(datetime.datetime.now())
-    envars = {
-        'AWS_ACCESS_KEY_ID': os.environ.get('AWS_ACCESS_KEY_ID', None),
-        'AWS_SECRET_ACCESS_KEY': os.environ.get('AWS_SECRET_ACCESS_KEY', None),
-        'EPIC_S3_BUCKET': os.environ.get('EPIC_S3_BUCKET', None),
-        'SQLALCHEMY_DATABASE_URI': os.environ.get('SQLALCHEMY_DATABASE_URI', None),
-    }
     data = local_client.run_job(minions,
                                 'epicsampler.run',
                                 arg=[],
@@ -370,7 +370,6 @@ def run(crawl_start, spider, offset=0, qty=-1, *args, **kwargs):
                                     'minions': len(minions),
                                     'offset': offset,
                                     'qty': qty,
-                                    'envars': envars,
                                 },
                                 expr_form='list',
                                 timeout=MASTER_OPTS['timeout'])

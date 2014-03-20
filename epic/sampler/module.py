@@ -143,7 +143,7 @@ def run(crawl_start, spider,
 
     conn = _connection.S3Connection(settings.AWS_ACCESS_KEY_ID,
                                     settings.AWS_SECRET_ACCESS_KEY)
-    bkt = _bucket.Bucket(conn, settings.S3_BUCKET)
+    bkt = _bucket.Bucket(conn, settings.AWS_S3_BUCKET)
 
     log.info('Querying S3 and calculating workload.')
     tracks_all = (k for k in bkt.list(bot_dir))
