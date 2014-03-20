@@ -7,7 +7,7 @@ import logging
 from scrapy.settings import CrawlerSettings
 from scrapy.crawler import CrawlerProcess
 
-import epic.bot.settings
+import epic.config
 
 
 log = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 def crawl(spider_name, max_tracks, start_page, max_pages, genre, *args,
           **kwargs):
     '''Run epicbot web crawler.'''
-    settings = CrawlerSettings(epic.bot.settings)
+    settings = CrawlerSettings(epic.config)
     crawler_process = CrawlerProcess(settings)
     crawler = crawler_process.create_crawler()
     spider_kwargs = {
