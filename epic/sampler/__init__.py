@@ -260,7 +260,7 @@ def provision(*args, **kwargs):
     salt.output.display_output(data, '', MASTER_OPTS)
 
     log.info('Writing config file.')
-    config = {
+    sampler_config = {
         'AWS_ACCESS_KEY_ID': config.AWS_ACCESS_KEY_ID,
         'AWS_SECRET_ACCESS_KEY': config.AWS_SECRET_ACCESS_KEY,
         'AWS_S3_BUCKET': config.AWS_S3_BUCKET,
@@ -273,7 +273,7 @@ def provision(*args, **kwargs):
                                 'fun': 'file.managed',
                                 'name': '/root/.epic/config',
                                 'makedirs': True,
-                                'contents': json.dumps(config)
+                                'contents': json.dumps(sampler_config)
                             },
                             expr_form='list',
                             timeout=300)
