@@ -14,6 +14,7 @@ import salt.output
 import salt.utils.event
 from salt.utils.event import tagify as _tagify
 
+from epic import settings
 from epic.cache import Cache
 
 
@@ -303,6 +304,24 @@ def provision(*args, **kwargs):
                             'saltutil.refresh_modules',
                             arg=[],
                             kwarg={},
+                            expr_form='list',
+                            timeout=300)
+    salt.output.display_output(data, '', MASTER_OPTS)
+
+    log.info('Setting environment variables.')
+    environ = {
+        'AWS_ACCESS_KEY_ID': settings.AWS_ACCESS_KEY_ID,
+        'AWS_SECRET_ACCESS_KEY': settings.AWS_SECRET_ACCESS_KEY,
+        'EPIC_S3_BUCKET': settings.S3_BUCKET,
+        'SQLALCHEMY_DATABASE_URI': settings.SQLALCHEMY_DATABASE_URI,
+    }
+    data = local_client.cmd(minions,
+                            'environ.setenv',
+                            arg=[],
+                            kwarg={
+                                'environ': environ,
+                                'update_minion': True
+                            },
                             expr_form='list',
                             timeout=300)
     salt.output.display_output(data, '', MASTER_OPTS)

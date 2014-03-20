@@ -18,19 +18,13 @@ from boto.s3 import connection as _connection
 from boto.s3 import bucket as _bucket
 from boto.s3 import key as _key
 
-from epic.settings import SAMPLER_SAMPLES
+from epic import settings
 from epic.db import session_maker
 from epic.db.models import DeclarativeBase, SamplerErrors
 
 
 log = logging.getLogger(__name__)
 
-
-def _set_envars(envars):
-    os.environ['AWS_ACCESS_KEY_ID'] = envars['AWS_ACCESS_KEY_ID']
-    os.environ['AWS_SECRET_ACCESS_KEY'] = envars['AWS_SECRET_ACCESS_KEY']
-    os.environ['EPIC_S3_BUCKET'] = envars['EPIC_S3_BUCKET']
-    os.environ['SQLALCHEMY_DATABASE_URI'] = envars['SQLALCHEMY_DATABASE_URI']
 
 def _tid_from_key(key):
     '''
@@ -121,7 +115,7 @@ def _write_cue(Session, temp_dir, crawl_start, track_id, sample_name):
 
 def run(crawl_start, spider,
         sampler_start='{:%Y-%m-%dT%H-%M-%S}'.format(datetime.datetime.now()),
-        minions=1, offset=0, qty=-1, envars=None):
+        minions=1, offset=0, qty=-1):
     '''
     Run sampler.
 
@@ -131,8 +125,6 @@ def run(crawl_start, spider,
 
         salt 'sampler-*' epicsampler.run crawl_start=2014-01-20T01-34-37 spider=soundclick
     '''
-    if envars:
-        _set_envars(envars)
     # define some common vars
     bot_dir = '/'.join(['bot', crawl_start, spider])
     temp_dir = '/tmp/epicsampler'
@@ -149,10 +141,9 @@ def run(crawl_start, spider,
         'complete': 0,
     }
 
-    conn = _connection.S3Connection(
-            os.environ.get('AWS_ACCESS_KEY_ID', None),
-            os.environ.get('AWS_SECRET_ACCESS_KEY', None))
-    bkt = _bucket.Bucket(conn, os.environ.get('EPIC_S3_BUCKET', None))
+    conn = _connection.S3Connection(settings.AWS_ACCESS_KEY_ID,
+                                    settings.AWS_SECRET_ACCESS_KEY)
+    bkt = _bucket.Bucket(conn, settings.S3_BUCKET)
 
     log.info('Querying S3 and calculating workload.')
     tracks_all = (k for k in bkt.list(bot_dir))
@@ -187,7 +178,7 @@ def run(crawl_start, spider,
     # Generate the split sample files, and upload them to the dst_bkt
     for track_id, track_file in tracks:
 
-        for sample_name in SAMPLER_SAMPLES:
+        for sample_name in settings.SAMPLER_SAMPLES:
             sample_dir = os.path.join(temp_dir, track_id, sample_name)
             if not os.path.exists(sample_dir):
                 os.makedirs(sample_dir)
