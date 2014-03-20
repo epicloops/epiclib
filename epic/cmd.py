@@ -3,10 +3,12 @@ Cli base and meta classes.
 '''
 import argparse
 import logging
+import sys
 
 from epic import __version__
 from epic.log import LEVELS
 from epic.log import init
+from epic import config
 
 
 log = logging.getLogger(__name__)
@@ -48,6 +50,10 @@ class Cmd(object):
     def run(cls):
         args = cls().parser.parse_args()
         init(args.loglevel)
+
+        if not config.read_config():
+            sys.exit()
+
         try:
             args.func(**args.__dict__)
         except KeyboardInterrupt:

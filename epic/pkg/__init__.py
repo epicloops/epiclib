@@ -9,7 +9,7 @@ import zipfile
 import boto
 from boto import s3
 
-from epic import settings
+from epic import config
 from epic.cache import Cache
 from epic.db import session_maker
 from epic.db.models import DeclarativeBase, Tracks
@@ -46,8 +46,8 @@ def _download_file(dl_dir, key):
     return fname
 
 def _get_s3_conn():
-    return boto.connect_s3(settings.AWS_ACCESS_KEY_ID,
-                           settings.AWS_SECRET_ACCESS_KEY)
+    return boto.connect_s3(config.AWS_ACCESS_KEY_ID,
+                           config.AWS_SECRET_ACCESS_KEY)
 
 def _write(fname, data):
     path = os.path.dirname(fname)
@@ -155,7 +155,7 @@ def download(crawl_start, spider, sampler_start, qry, limit, dl_samples=True,
     os.makedirs(dl_dir)
 
     conn = _get_s3_conn()
-    bkt = s3.bucket.Bucket(conn, settings.AWS_S3_BUCKET)
+    bkt = s3.bucket.Bucket(conn, config.AWS_S3_BUCKET)
 
     # download tracks
     s3_tracks = '/'.join(['bot', crawl_start, spider])
@@ -255,7 +255,7 @@ def upload(zip_name, clean=True, *args, **kwargs):
     :param clean: Flag to remove pkg dir after uplaod.
     '''
     conn = _get_s3_conn()
-    bucket = s3.bucket.Bucket(conn, settings.AWS_S3_BUCKET)
+    bucket = s3.bucket.Bucket(conn, config.AWS_S3_BUCKET)
     k = s3.key.Key(bucket, 'pkg/{}'.format(zip_name))
     k.set_contents_from_filename(zip_name)
     log.info('Uploaded: %s to %s', zip_name, k)

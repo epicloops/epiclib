@@ -18,13 +18,18 @@ from boto.s3 import connection as _connection
 from boto.s3 import bucket as _bucket
 from boto.s3 import key as _key
 
-from epic import settings
+from epic import config
 from epic.db import session_maker
 from epic.db.models import DeclarativeBase, SamplerErrors
 
 
 log = logging.getLogger(__name__)
 
+
+def __virtual__():
+    if config.read_config():
+        return True
+    return False
 
 def _tid_from_key(key):
     '''
@@ -141,9 +146,9 @@ def run(crawl_start, spider,
         'complete': 0,
     }
 
-    conn = _connection.S3Connection(settings.AWS_ACCESS_KEY_ID,
-                                    settings.AWS_SECRET_ACCESS_KEY)
-    bkt = _bucket.Bucket(conn, settings.AWS_S3_BUCKET)
+    conn = _connection.S3Connection(config.AWS_ACCESS_KEY_ID,
+                                    config.AWS_SECRET_ACCESS_KEY)
+    bkt = _bucket.Bucket(conn, config.AWS_S3_BUCKET)
 
     log.info('Querying S3 and calculating workload.')
     tracks_all = (k for k in bkt.list(bot_dir))
@@ -178,7 +183,7 @@ def run(crawl_start, spider,
     # Generate the split sample files, and upload them to the dst_bkt
     for track_id, track_file in tracks:
 
-        for sample_name in settings.SAMPLER_SAMPLES:
+        for sample_name in config.SAMPLER_SAMPLES:
             sample_dir = os.path.join(temp_dir, track_id, sample_name)
             if not os.path.exists(sample_dir):
                 os.makedirs(sample_dir)

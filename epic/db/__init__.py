@@ -11,7 +11,7 @@ import boto.rds
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-import epic.settings as settings
+import epic.config as config
 from epic.db.models import DeclarativeBase
 
 
@@ -20,8 +20,8 @@ log = logging.getLogger(__name__)
 
 def _rds_connection():
     return boto.rds.connect_to_region('us-east-1',
-                        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
+                        aws_access_key_id=config.AWS_ACCESS_KEY_ID,
+                        aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY)
 
 def up(snapshot, *args, **kwargs):
     '''Bring up RDS instance from snapshot.'''
@@ -39,7 +39,7 @@ def up(snapshot, *args, **kwargs):
     log.info('Endpoint: %s', db.endpoint)
 
 def make_engine():
-    return create_engine(settings.SQLALCHEMY_DATABASE_URI)
+    return create_engine(config.SQLALCHEMY_DATABASE_URI)
 
 def session_maker():
     engine = make_engine()

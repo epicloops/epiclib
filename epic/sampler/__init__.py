@@ -15,7 +15,7 @@ import salt.output
 import salt.utils.event
 from salt.utils.event import tagify as _tagify
 
-from epic import settings
+from epic import config
 from epic.cache import Cache
 
 
@@ -261,20 +261,18 @@ def provision(*args, **kwargs):
 
     log.info('Writing config file.')
     config = {
-        'AWS_ACCESS_KEY_ID': settings.AWS_ACCESS_KEY_ID,
-        'AWS_SECRET_ACCESS_KEY': settings.AWS_SECRET_ACCESS_KEY,
-        'AWS_S3_BUCKET': settings.AWS_S3_BUCKET,
-        'SQLALCHEMY_DATABASE_URI': settings.SQLALCHEMY_DATABASE_URI,
+        'AWS_ACCESS_KEY_ID': config.AWS_ACCESS_KEY_ID,
+        'AWS_SECRET_ACCESS_KEY': config.AWS_SECRET_ACCESS_KEY,
+        'AWS_S3_BUCKET': config.AWS_S3_BUCKET,
+        'SQLALCHEMY_DATABASE_URI': config.SQLALCHEMY_DATABASE_URI,
     }
     data = local_client.cmd(minions,
                             'state.single',
                             arg=[],
                             kwarg={
                                 'fun': 'file.managed',
-                                'name': '/home/ubuntu/.epic/config',
+                                'name': '/root/.epic/config',
                                 'makedirs': True,
-                                'user': 'ubuntu',
-                                'group': 'ubuntu',
                                 'contents': json.dumps(config)
                             },
                             expr_form='list',
