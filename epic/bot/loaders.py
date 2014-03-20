@@ -12,10 +12,10 @@ class TrackItemLoader(ItemLoader):
     default_input_processor = Identity()
     default_output_processor = TakeFirst()
 
-    origin_url_in = MapCompose(lambda u: u.decode('ascii'))
+    origin_page_url_in = MapCompose(lambda u: u.decode('ascii'))
 
     description_in = MapCompose(lambda s: s.strip())
 
-    track_url_in = MapCompose(lambda u: u.decode('ascii'))
+    track_page_url_in = MapCompose(lambda u: u.decode('ascii'))
 
-    data_url_in = MapCompose(urllib2.unquote)
+    track_url_in = MapCompose(urllib2.unquote)

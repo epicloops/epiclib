@@ -62,11 +62,11 @@ else:
         'apache-libcloud',
     ])
     console_scripts.extend([
-        'epicdb = epic.cmds.epicdb:EpicdbCmd.run',
-        'epicbot = epic.cmds.epicbot:EpicbotCmd.run',
-        'epicsampler = epic.cmds.epicsampler:EpicsamplerCmd.run',
-        'epicqry = epic.cmds.epicqry:EpicqryCmd.run',
-        'epicpkg = epic.cmds.epicpkg:EpicpkgCmd.run',
+        'epicdb = epic.db.cmd:EpicdbCmd.run',
+        'epicbot = epic.bot.cmd:EpicbotCmd.run',
+        'epicsampler = epic.sampler.cmd:EpicsamplerCmd.run',
+        'epicqry = epic.qry.cmd:EpicqryCmd.run',
+        'epicpkg = epic.pkg.cmd:EpicpkgCmd.run',
     ])
 
 class PyTest(TestCommand):

@@ -30,9 +30,9 @@ class TrackPipeline(object):
     def process_item(self, item, spider):
 
         try:
-            request = Request(url=item.get('data_url', None))
+            request = Request(url=item.get('track_url', None))
         except TypeError:
-            msg = ('{cls}: Missing field: data_url'.format(
+            msg = ('{cls}: Missing field: track_url'.format(
                                                 cls=self.__class__.__name__))
             raise TrackPipelineDropItem(msg)
 
@@ -81,7 +81,7 @@ class TrackPipeline(object):
             spider=spider)
 
         ext = os.path.splitext(request.url)[1]
-        path = '{ck}/track{ext}'.format(ck=item['crawl_key'], ext=ext)
+        path = '{0}/track{1}'.format(item['track_id'], ext)
 
         buf = StringIO(response.body)
         buf.seek(0)
@@ -93,14 +93,14 @@ class TrackPipeline(object):
 
     def ul_success(self, key_name, item, spider):
 
-        item['data_s3_key'] = key_name
+        item['s3_key'] = key_name
 
         spider.crawler.stats.inc_value(
             '{}/file_upload_count'.format(self.__class__.__name__),
             spider=spider)
 
         log.msg(format='Uploaded: <%(url)s> uploaded to <%(key_name)s>',
-                level=log.DEBUG, spider=spider, url=item['data_url'],
+                level=log.DEBUG, spider=spider, url=item['track_page_url'],
                 key_name=key_name)
 
         return item

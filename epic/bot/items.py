@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from scrapy.item import Item, Field
 
-from epic.models import Tracks
+from epic.db.models import Tracks
 
 class TrackItem(Item):
 

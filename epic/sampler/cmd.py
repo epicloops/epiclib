@@ -1,8 +1,13 @@
 '''
 epicsampler command
 '''
+import logging
+
 import epic.sampler
-from epic.cmds import Cmd, CmdMeta
+from epic.cmd import Cmd, CmdMeta
+
+
+log = logging.getLogger(__name__)
 
 
 class EpicsamplerCmd(Cmd):
@@ -32,9 +37,7 @@ class EpicsamplerCmd(Cmd):
                 {
                     'dest': 'display_ssh_output',
                     'name_or_flags': ['-d', '--display-ssh'],
-                    'type': bool,
-                    'default': False,
-                    'required': False,
+                    'action': 'store_true',
                     'help': 'flag to display ssh output'
                 },
             ],

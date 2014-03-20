@@ -50,7 +50,7 @@ class EchonestPipeline(object):
 
             # econfig.ECHO_NEST_API_KEY = self.settings.get('ECHONEST_API_KEY')
 
-            # s3_key = self.store.generate_url(item['data_s3_key'])
+            # s3_key = self.store.generate_url(item['s3_key'])
             # dfd = threads.deferToThread(_api_request,
             #                             self.store.generate_url(s3_key))
             # dfd.addCallback(_populate_fields)
@@ -61,9 +61,9 @@ class EchonestPipeline(object):
 
             log.msg(format='Echonest: <%(key_name)s> posting to Echonest API',
                     level=log.DEBUG, spider=spider,
-                    key_name=item['data_s3_key'])
+                    key_name=item['s3_key'])
 
-            s3_key = self.store.generate_url(item['data_s3_key'])
+            s3_key = self.store.generate_url(item['s3_key'])
             track = etrack.track_from_url(s3_key)
 
             track.get_analysis()
@@ -79,7 +79,7 @@ class EchonestPipeline(object):
 
             log.msg(format='Echonest: <%(key_name)s> fields populated',
                     level=log.DEBUG, spider=spider,
-                    key_name=item['data_s3_key'])
+                    key_name=item['s3_key'])
 
             return item
 

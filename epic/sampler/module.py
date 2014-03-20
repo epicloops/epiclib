@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 '''
-Split tracks from epicbot into samples based on cuesheets and save the results
-to S3.
+Salt module that plits tracks from epicbot into samples based on cuesheets and
+saves the results to S3.
 '''
 import logging
 import os
@@ -19,11 +19,8 @@ from boto.s3 import bucket as _bucket
 from boto.s3 import key as _key
 
 from epic.settings import SAMPLER_SAMPLES
-from epic.models import (
-    DeclarativeBase,
-    SamplerErrors,
-    session
-)
+from epic.db import session_maker
+from epic.db.models import DeclarativeBase, SamplerErrors
 
 
 log = logging.getLogger(__name__)
@@ -35,9 +32,9 @@ def _set_envars(envars):
     os.environ['EPIC_S3_BUCKET'] = envars['EPIC_S3_BUCKET']
     os.environ['SQLALCHEMY_DATABASE_URI'] = envars['SQLALCHEMY_DATABASE_URI']
 
-def _crawl_id_from_key(key):
+def _tid_from_key(key):
     '''
-    Return crawl_id from s3 key.
+    Return track_id from s3 key.
 
     :param key: s3 key.
     '''
@@ -65,13 +62,13 @@ def _download_file(temp_dir, key):
     :param temp_dir: Temp directory to download key to.
     :param key: s3 key to download.
     '''
-    crawl_id = _crawl_id_from_key(key)
-    fname = os.path.join(temp_dir, crawl_id, key.name.split('/')[4])
+    track_id = _tid_from_key(key)
+    fname = os.path.join(temp_dir, track_id, key.name.split('/')[4])
     if not os.path.exists(os.path.dirname(fname)):
         os.makedirs(os.path.dirname(fname))
     key.get_contents_to_filename(fname)
     log.info('%s downloaded to %s', key.name, fname)
-    return (crawl_id, fname)
+    return (track_id, fname)
 
 def _upload_file(bucket, key, fname):
     '''
@@ -86,11 +83,11 @@ def _upload_file(bucket, key, fname):
     log.info('Uploaded %s to %s', fname, k)
     k.close()
 
-def _write_cue(Session, temp_dir, crawl_start, crawl_id, sample_name):
-    sess = Session()
+def _write_cue(Session, temp_dir, crawl_start, track_id, sample_name):
+    session = Session()
     table = DeclarativeBase.metadata.tables[sample_name]
-    samples = sess.query(table).\
-                    filter_by(crawl_key=crawl_id, crawl_start=crawl_start).\
+    samples = session.query(table).\
+                    filter_by(track_id=track_id, crawl_start=crawl_start).\
                     order_by(table.c.start)
     cue = [
         'PERFORMER " "',
@@ -114,9 +111,9 @@ def _write_cue(Session, temp_dir, crawl_start, crawl_id, sample_name):
         ]
         cue += entry
 
-    sess.close()
+    session.close()
 
-    fname = os.path.join(temp_dir, crawl_id, '{}.cue'.format(sample_name))
+    fname = os.path.join(temp_dir, track_id, '{}.cue'.format(sample_name))
     with open(fname, 'w') as f:
         f.write('\n'.join(cue))
 
@@ -186,16 +183,16 @@ def run(crawl_start, spider,
         ret['downloaded_tracks'] += 1
         __salt__['event.fire_master'](ret, update_tag)
 
-    Session = session()
+    Session = session_maker()
     # Generate the split sample files, and upload them to the dst_bkt
-    for crawl_id, track_file in tracks:
+    for track_id, track_file in tracks:
 
         for sample_name in SAMPLER_SAMPLES:
-            sample_dir = os.path.join(temp_dir, crawl_id, sample_name)
+            sample_dir = os.path.join(temp_dir, track_id, sample_name)
             if not os.path.exists(sample_dir):
                 os.makedirs(sample_dir)
 
-            cue_file = _write_cue(Session, temp_dir, crawl_start, crawl_id,
+            cue_file = _write_cue(Session, temp_dir, crawl_start, track_id,
                                   sample_name)
 
             cmd = 'mp3splt -n -x -c {0} -d {1} -o @n4 {2}'.format(cue_file,
@@ -212,28 +209,28 @@ def run(crawl_start, spider,
                             e.returncode,
                             e.output)
 
-                sess = Session()
+                session = Session()
                 try:
-                    sess.add(SamplerErrors(crawl_key=crawl_id,
-                                           crawl_start=crawl_start,
-                                           sampler_start=sampler_start,
-                                           cmd=e.cmd,
-                                           returncode=e.returncode,
-                                           output=e.output))
+                    session.add(SamplerErrors(track_id=track_id,
+                                              crawl_start=crawl_start,
+                                              sampler_start=sampler_start,
+                                              cmd=e.cmd,
+                                              returncode=e.returncode,
+                                              output=e.output))
                 except:
-                    sess.rollback()
+                    session.rollback()
                     raise
                 else:
-                    sess.commit()
+                    session.commit()
                 finally:
-                    sess.close()
+                    session.close()
                     ret['errors'] += 1
                     __salt__['event.fire_master'](ret, update_tag)
                 break
 
             # upload sample files to dst_bkt
             for i, fname in enumerate(os.listdir(sample_dir)):
-                kname = '/'.join([sampler_dir, crawl_id, sample_name, fname])
+                kname = '/'.join([sampler_dir, track_id, sample_name, fname])
                 _upload_file(bkt, kname, os.path.join(sample_dir, fname))
                 try:
                     ret[sample_name] += 1
@@ -246,9 +243,9 @@ def run(crawl_start, spider,
                     __salt__['event.fire_master'](ret, update_tag)
 
             log.info('%s have been split and uploaded for %s',
-                     sample_name, crawl_id)
+                     sample_name, track_id)
 
-        log.info('%s track processed.', crawl_id)
+        log.info('%s track processed.', track_id)
         ret['processed_tracks'] += 1
         __salt__['event.fire_master'](ret, update_tag)
 

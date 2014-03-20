@@ -20,9 +20,9 @@ class PostCrawlPipeline(object):
                                             self.stats.get_value('start_time'))
 
         m = hashlib.md5()
-        m.update(item.get('data_url', 'Not populated.'))
+        m.update(item.get('track_url', 'Not populated.'))
         m.update(item.get('download_flag', 'Not populated.'))
         m.update(item.get('license_url', 'Not populated.'))
-        item['crawl_key'] = m.hexdigest().decode('utf-8')
+        item['track_id'] = m.hexdigest().decode('utf-8')
 
         return item

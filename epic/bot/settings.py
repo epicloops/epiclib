@@ -41,7 +41,7 @@ DOWNLOADER_MIDDLEWARES = {
 ITEM_PIPELINES = {
     # Add any additional post crawl data to every item returned from spiders
     'epic.bot.pipelines.post_crawl.PostCrawlPipeline': 200,
-    # Drop dups based on crawl_key.
+    # Drop dups based on track_id.
     'epic.bot.pipelines.filters.DuplicatesPipeline': 300,
     # Check for CC license and download flag
     'epic.bot.pipelines.filters.CCFilterPipeline': 400,

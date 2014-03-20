@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
 '''
-Distributes the sampling of tracks found by `epicbot` over multiple servers.
+Distributes the sampling of tracks found by epicbot over multiple servers.
 '''
 import logging
 import os
 import datetime
 from collections import OrderedDict as _OrderedDict
 import curses
-import json
 
 import salt.config
 import salt.cloud
 import salt.output
 import salt.utils.event
 from salt.utils.event import tagify as _tagify
+
+from epic.cache import Cache
 
 
 log = logging.getLogger(__name__)
@@ -22,46 +23,11 @@ log = logging.getLogger(__name__)
 MASTER_OPTS = salt.config.master_config(
     os.environ.get('SALT_MASTER_CONFIG', '/etc/salt/master'))
 
-class _Cache(object):
 
-    def __init__(self, name):
-        dirname = os.path.join(MASTER_OPTS['cachedir'], 'epicsampler')
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-        self.path = os.path.join(dirname, name)
-
-    def read(self):
-        '''
-        Attempt to read from cache.
-        '''
-        try:
-            return json.loads(open(self.path).read())
-        except IOError:
-            return []
-
-    def write(self, data):
-        '''
-        Write data to cache.
-
-        :param data: Data to write to cache.
-        '''
-        with open(self.path, 'w') as cache:
-            cache.write(json.dumps(data))
-
-    def purge(self):
-        '''
-        Remove cache file.
-        '''
-        try:
-            os.remove(self.path)
-        except OSError:
-            pass
-
-
-class _ActiveJobCache(_Cache):
+class ActiveJobCache(Cache):
 
     def __init__(self):
-        super(_ActiveJobCache, self).__init__('active')
+        super(ActiveJobCache, self).__init__('active')
 
     def read(self):
         '''
@@ -69,7 +35,7 @@ class _ActiveJobCache(_Cache):
 
         Purge cache and move jid to history if job is no longer active.
         '''
-        contents = super(_ActiveJobCache, self).read()
+        contents = super(ActiveJobCache, self).read()
         if not contents:
             return {}
 
@@ -88,10 +54,10 @@ class _ActiveJobCache(_Cache):
 
         # cached jid is no longer active on any servers
         # add cached jid to front of history list
-        history_cache = _Cache('history')
+        history_cache = Cache('history')
         history_cache.write([contents['jid']] + history_cache.read())
 
-        super(_ActiveJobCache, self).purge()
+        super(ActiveJobCache, self).purge()
         return {}
 
     def jid(self):
@@ -116,7 +82,7 @@ def up(profile, servers=1, display_ssh_output=False, *args, **kwargs):
 
         salt-run -l info epicsampler.up profile=ec2_c3l_ubuntu servers=10
     '''
-    server_cache = _Cache('server')
+    server_cache = Cache('server')
     if server_cache.read():
         log.info('Servers are already up. Run `epicsampler ping` to see '
             'status.')
@@ -155,7 +121,7 @@ def ping(output=True, *args, **kwargs):
         salt-run -l info epicsampler.ping
     '''
     ret = {}
-    cached_servers = _Cache('server').read()
+    cached_servers = Cache('server').read()
     local_client = _get_local_client()
 
     if not cached_servers:
@@ -352,7 +318,7 @@ def run(crawl_start, spider, offset=0, qty=-1, *args, **kwargs):
         salt-run -l info epicsampler.run crawl_start=2014-01-20T01-34-37 spider=soundclick qty=1000
     '''
     ret = {}
-    active_cache = _ActiveJobCache()
+    active_cache = ActiveJobCache()
     local_client = _get_local_client()
 
     log.info('Checking for active job.')
@@ -523,7 +489,7 @@ def _render_detail(stdscr, jid, data):
 
 def _render_active_detail(stdscr, jid):
     stdscr.clear()
-    active_cache = _ActiveJobCache()
+    active_cache = ActiveJobCache()
     local_client = _get_local_client()
 
     # get cached results from epicsampler active job cache
@@ -611,8 +577,8 @@ def _render_menu(stdscr):
     # turn off blinking cursor
     curses.curs_set(0)
 
-    active_cache = _ActiveJobCache()
-    history_cache = _Cache('history')
+    active_cache = ActiveJobCache()
+    history_cache = Cache('history')
 
     active = [active_cache.jid()]
     history = history_cache.read()
@@ -678,7 +644,7 @@ def kill(*args, **kwargs):
 
         salt-run -l info epicsampler.kill
     '''
-    active_cache = _ActiveJobCache()
+    active_cache = ActiveJobCache()
 
     if not active_cache.jid():
         log.info('No active sampler job.')
@@ -707,7 +673,7 @@ def destroy(*args, **kwargs):
         salt-run -l info epicsampler.destroy
     '''
     ret = {}
-    server_cache = _Cache('server')
+    server_cache = Cache('server')
 
     cached_servers = server_cache.read()
     if not cached_servers:

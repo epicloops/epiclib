@@ -1,11 +1,9 @@
 '''
-Manages the epic database backend.
+Models.
 '''
-import os
 import logging
 
 from sqlalchemy import (
-    create_engine,
     Column,
     Integer,
     Float,
@@ -14,7 +12,6 @@ from sqlalchemy import (
     PickleType
 )
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 
 
 log = logging.getLogger(__name__)
@@ -26,22 +23,22 @@ class Tracks(DeclarativeBase):
 
     __tablename__ = "tracks"
 
-    crawl_key = Column('crawl_key', String(32), primary_key=True)
+    track_id = Column('track_id', String(32), primary_key=True)
     crawl_start = Column('crawl_start', String(50), primary_key=True)
     artist = Column('artist', String(500))
-    artist_url = Column('artist_url', String(500))
-    data_url = Column('data_url', String(500))
-    data_s3_key = Column('data_s3_key', String(500))
+    artist_page_url = Column('artist_page_url', String(500))
+    track_url = Column('track_url', String(500))
+    s3_key = Column('s3_key', String(500))
     description = Column('description', String(500))
     download_flag = Column('download_flag', String(1))
     dropped_item_exception = Column('dropped_item_exception', String(5000))
     errback_failure = Column('errback_failure', Text)
     genre = Column('genre', String(500))
     license_url = Column('license_url', String(500))
-    origin_url = Column('origin_url', String(500))
+    origin_page_url = Column('origin_page_url', String(500))
     sub_genre = Column('sub_genre', String(500))
     title = Column('title', String(500))
-    track_url = Column('track_url', String(500))
+    track_page_url = Column('track_page_url', String(500))
     echonest_acousticness = Column('echonest_acousticness', Float)
     echonest_album = Column('echonest_album', String(500))
     echonest_analysis_channels = Column('echonest_analysis_channels', Float)
@@ -108,7 +105,7 @@ class Sections(DeclarativeBase):
 
     __tablename__ = "sections"
 
-    crawl_key = Column('crawl_key', String(32), primary_key=True)
+    track_id = Column('track_id', String(32), primary_key=True)
     crawl_start = Column('crawl_start', String(50), primary_key=True)
     sample_num = Column('sample_num', Integer, primary_key=True)
     confidence = Column('confidence', Float)
@@ -128,7 +125,7 @@ class Bars(DeclarativeBase):
 
     __tablename__ = "bars"
 
-    crawl_key = Column('crawl_key', String(32), primary_key=True)
+    track_id = Column('track_id', String(32), primary_key=True)
     crawl_start = Column('crawl_start', String(50), primary_key=True)
     sample_num = Column('sample_num', Integer, primary_key=True)
     confidence = Column('confidence', Float)
@@ -139,7 +136,7 @@ class Beats(DeclarativeBase):
 
     __tablename__ = "beats"
 
-    crawl_key = Column('crawl_key', String(32), primary_key=True)
+    track_id = Column('track_id', String(32), primary_key=True)
     crawl_start = Column('crawl_start', String(50), primary_key=True)
     sample_num = Column('sample_num', Integer, primary_key=True)
     confidence = Column('confidence', Float)
@@ -150,7 +147,7 @@ class Tatums(DeclarativeBase):
 
     __tablename__ = "tatums"
 
-    crawl_key = Column('crawl_key', String(32), primary_key=True)
+    track_id = Column('track_id', String(32), primary_key=True)
     crawl_start = Column('crawl_start', String(50), primary_key=True)
     sample_num = Column('sample_num', Integer, primary_key=True)
     confidence = Column('confidence', Float)
@@ -161,7 +158,7 @@ class Segments(DeclarativeBase):
 
     __tablename__ = "segments"
 
-    crawl_key = Column('crawl_key', String(32), primary_key=True)
+    track_id = Column('track_id', String(32), primary_key=True)
     crawl_start = Column('crawl_start', String(50), primary_key=True)
     sample_num = Column('sample_num', Integer, primary_key=True)
     confidence = Column('confidence', Float)
@@ -177,22 +174,22 @@ class Dropped(DeclarativeBase):
 
     __tablename__ = "dropped"
 
-    crawl_key = Column('crawl_key', String(32), primary_key=True)
+    track_id = Column('track_id', String(32), primary_key=True)
     crawl_start = Column('crawl_start', String(50), primary_key=True)
     artist = Column('artist', String(500))
-    artist_url = Column('artist_url', String(500))
-    data_url = Column('data_url', String(500))
-    data_s3_key = Column('data_s3_key', String(500))
+    artist_page_url = Column('artist_page_url', String(500))
+    track_url = Column('track_url', String(500))
+    s3_key = Column('s3_key', String(500))
     description = Column('description', String(500))
     download_flag = Column('download_flag', String(1))
     dropped_item_exception = Column('dropped_item_exception', String(5000))
     errback_failure = Column('errback_failure', Text)
     genre = Column('genre', String(500))
     license_url = Column('license_url', String(500))
-    origin_url = Column('origin_url', String(500))
+    origin_page_url = Column('origin_page_url', String(500))
     sub_genre = Column('sub_genre', String(500))
     title = Column('title', String(500))
-    track_url = Column('track_url', String(500))
+    track_page_url = Column('track_page_url', String(500))
     echonest_acousticness = Column('echonest_acousticness', Float)
     echonest_album = Column('echonest_album', String(500))
     echonest_analysis_channels = Column('echonest_analysis_channels', Float)
@@ -259,35 +256,9 @@ class SamplerErrors(DeclarativeBase):
 
     __tablename__ = "sampler_errors"
 
-    crawl_key = Column('crawl_key', String(32), primary_key=True)
+    track_id = Column('track_id', String(32), primary_key=True)
     crawl_start = Column('crawl_start', String(50), primary_key=True)
     sampler_start = Column('sampler_start', String(50), primary_key=True)
     cmd = Column('cmd', String(500), primary_key=True)
     returncode = Column('returncode', String(20))
     output = Column('output', Text)
-
-def _connect():
-    return create_engine(os.environ.get('SQLALCHEMY_DATABASE_URI'))
-
-def session():
-    engine = _connect()
-    return sessionmaker(bind=engine)
-
-def create(*args, **kwargs):
-    '''Create database schema.'''
-    engine = _connect()
-    DeclarativeBase.metadata.create_all(engine)
-    log.info('Schema created.')
-
-def truncate(*args, **kwargs):
-    '''Truncate all tables in database schema.'''
-    engine = _connect()
-    for tbl in reversed(DeclarativeBase.metadata.sorted_tables):
-        engine.execute(tbl.delete())
-        log.info('%s truncated.', tbl.name)
-
-def drop(*args, **kwargs):
-    '''Drop database schema.'''
-    engine = _connect()
-    DeclarativeBase.metadata.drop_all(engine)
-    log.info('Schema dropped.')

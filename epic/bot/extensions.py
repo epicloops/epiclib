@@ -7,7 +7,8 @@ from scrapy import log
 from scrapy import signals
 from scrapy.exceptions import NotConfigured
 
-from epic.models import session, Dropped
+from epic.db import session_maker
+from epic.db.models import Dropped
 
 
 class DroppedItemsCsv(object):
@@ -30,7 +31,7 @@ class DroppedItemsCsv(object):
         return ext
 
     def spider_opened(self, spider):
-        self.Session = session()
+        self.Session = session_maker()
 
     def item_dropped(self, item, spider, exception):
 
@@ -47,9 +48,9 @@ class DroppedItemsCsv(object):
                 raise
             else:
                 session.commit()
-                log.msg(format='Persisted: Dropped - %(track_url)s',
+                log.msg(format='Persisted: Dropped - %(track_page_url)s',
                         level=log.DEBUG, spider=spider,
-                        track_url=item_record['track_url'])
+                        track_page_url=item_record['track_page_url'])
             finally:
                 session.close()
             return item

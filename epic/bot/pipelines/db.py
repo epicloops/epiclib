@@ -6,8 +6,8 @@ from twisted.internet import threads
 from scrapy import log
 from scrapy.exceptions import DropItem
 
-from epic.models import (
-    session,
+from epic.db import session_maker
+from epic.db.models import (
     Tracks,
     Sections,
     Bars,
@@ -34,7 +34,7 @@ class DbPipeline(object):
         return cls(crawler)
 
     def open_spider(self, spider):
-        self.Session = session()
+        self.Session = session_maker()
 
     def process_item(self, item, spider):
 
@@ -50,7 +50,7 @@ class DbPipeline(object):
                 field = 'echonest_{}'.format(sample_name)
 
                 for i, sample in enumerate(item[field]):
-                    sample['crawl_key'] = item['crawl_key']
+                    sample['track_id'] = item['track_id']
                     sample['crawl_start'] = item['crawl_start']
                     sample['sample_num'] = i+1
 
@@ -88,9 +88,9 @@ class DbPipeline(object):
                 raise
             else:
                 session.commit()
-                log.msg(format='Persisted: Track - %(track_url)s',
+                log.msg(format='Persisted: Track - %(track_page_url)s',
                         level=log.DEBUG, spider=spider,
-                        track_url=item_record['track_url'])
+                        track_page_url=item_record['track_page_url'])
                 spider.crawler.stats.inc_value(
                     '{}/meta_track_count'.format(self.__class__.__name__),
                     spider=spider)

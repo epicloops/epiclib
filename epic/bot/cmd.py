@@ -1,8 +1,13 @@
 '''
 epicbot command
 '''
+import logging
+
 import epic.bot
-from epic.cmds import Cmd, CmdMeta
+from epic.cmd import Cmd, CmdMeta
+
+
+log = logging.getLogger(__name__)
 
 
 class EpicbotCmd(Cmd):

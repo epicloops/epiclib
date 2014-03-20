@@ -15,12 +15,12 @@ class DuplicatesPipeline(object):
 
     def process_item(self, item, spider):
 
-        if item['crawl_key'] in self.keys_seen:
+        if item['track_id'] in self.keys_seen:
             raise DuplicateDropItem("{cls}: {ck}".format(
                                                 cls=self.__class__.__name__,
-                                                ck=item['crawl_key']))
+                                                ck=item['track_id']))
         else:
-            self.keys_seen.add(item['crawl_key'])
+            self.keys_seen.add(item['track_id'])
             return item
 
 
@@ -43,11 +43,11 @@ class CCFilterPipeline(object):
             raise CCFilterDropItem('Improper license.')
         elif item.get('download_flag', None) != 'Y':
             raise CCFilterDropItem('No free download.')
-        elif not item.get('origin_url', None):
-            raise CCFilterDropItem('No origin_url. Needed for licensing.')
-        elif not item.get('artist_url', None):
-            raise CCFilterDropItem('No artist_url. Needed for licensing.')
-        elif not item.get('track_url', None):
-            raise CCFilterDropItem('No track url. Needed for licensing.')
+        elif not item.get('origin_page_url', None):
+            raise CCFilterDropItem('No origin_page_url. Needed for licensing.')
+        elif not item.get('artist_page_url', None):
+            raise CCFilterDropItem('No artist_page_url. Needed for licensing.')
+        elif not item.get('track_page_url', None):
+            raise CCFilterDropItem('No track_page_url. Needed for licensing.')
 
         return item

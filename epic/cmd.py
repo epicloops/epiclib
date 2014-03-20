@@ -1,5 +1,5 @@
 '''
-Base for cli commands.
+Cli base and meta classes.
 '''
 import argparse
 import logging

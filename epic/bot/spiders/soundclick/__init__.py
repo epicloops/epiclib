@@ -115,13 +115,13 @@ class SoundclickSpider(Spider):
                 else:
                     return
 
-            loader.add_value('origin_url', response.url)
+            loader.add_value('origin_page_url', response.url)
             loader.add_value('genre', genre)
             loader.add_xpath('soundclick_songid',
                              '{}/td[1]/a[2]/@href'.format(trow1),
                              re=r'songid=(\d+)&')
             loader.add_xpath('artist', '{}/td[3]/a/text()'.format(trow1))
-            loader.add_xpath('artist_url', '{}/td[3]/a/@href'.format(trow1))
+            loader.add_xpath('artist_page_url', '{}/td[3]/a/@href'.format(trow1))
             loader.add_xpath('title', '{}/td[4]/text()'.format(trow1))
             loader.add_xpath('soundclick_commercial',
                              '{}/td[5]/text()'.format(trow1))
@@ -133,7 +133,7 @@ class SoundclickSpider(Spider):
 
             item = loader.load_item()
 
-            yield Request(item['artist_url'], callback=self.parse_artist_page,
+            yield Request(item['artist_page_url'], callback=self.parse_artist_page,
                           errback=lambda f, i=item: errback(f, i),
                           # TODO: Cache parse_artist_page result to avoid this?
                           # Dont filter dup requests to artist page in case of
@@ -169,7 +169,7 @@ class SoundclickSpider(Spider):
     def parse_track_page(self, response):
 
         loader = self.loader(item=response.meta['item'], response=response)
-        loader.add_value('track_url', response.url)
+        loader.add_value('track_page_url', response.url)
         loader.add_xpath('soundclick_download_url',
                          '//html',
                          re=r'/util/downloadSong\.cfm\?ID=' +
@@ -193,5 +193,5 @@ class SoundclickSpider(Spider):
 
         loader = self.loader(item=response.meta['item'], response=response)
         loader.add_value('soundclick_xml_url', response.url)
-        loader.add_xpath('data_url', '//cdnFilename/text()')
+        loader.add_xpath('track_url', '//cdnFilename/text()')
         return loader.load_item()
