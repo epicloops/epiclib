@@ -8,7 +8,7 @@ from scrapy.spider import Spider
 from scrapy.http import Request
 from scrapy.selector import Selector
 
-from epic.bot.cli import Cli
+from epic.bot.options import Options
 from epic.bot.utils import errback
 from epic.bot.spiders.soundclick import settings
 from epic.bot.spiders.soundclick.item import SoundclickTrackItem
@@ -23,7 +23,7 @@ class SoundclickSpider(Spider):
     def __init__(self, max_tracks=None, start_page=1, max_pages=None,
                  genre='prod', *args, **kwargs):
 
-        self.cli = Cli(max_tracks, start_page, max_pages)
+        self.opts = Options(max_tracks, start_page, max_pages)
 
         self.base_url = 'http://www.soundclick.com'
         self.search_url = '{}/business/license_list.cfm'.format(self.base_url)
@@ -40,7 +40,7 @@ class SoundclickSpider(Spider):
     @start_urls.setter
     def start_urls(self, value):
 
-        page = self.cli.start_page
+        page = self.opts.start_page
         base = '{}?cclicense=1&sort=1&page={}'.format(self.search_url, page)
         genre_map = settings.GENRE_MAP.items()
         genre_urls = {k: '{}&genreID={}'.format(base, v) for k, v in genre_map}
@@ -96,7 +96,7 @@ class SoundclickSpider(Spider):
         for i in xrange(4, 599, 6):
 
             # Return next search page if we are greater than max_tracks
-            if self.cli.max_tracks and i == (4+(self.cli.max_tracks*6)):
+            if self.opts.max_tracks and i == (4+(self.opts.max_tracks*6)):
                 break
 
             loader = self.loader(item=SoundclickTrackItem(), response=response)
@@ -110,7 +110,7 @@ class SoundclickSpider(Spider):
 
                 # Attempt to crawl at least 100 pages per genre
                 # TODO: Better way to recover from bad http responses?
-                if self.cli.start_page and (self.cli.start_page+page) < 100:
+                if self.opts.start_page and (self.opts.start_page+page) < 100:
                     break
                 else:
                     return
@@ -142,8 +142,8 @@ class SoundclickSpider(Spider):
                           meta={'item': item})
 
         # do not crawl more than max_pages
-        if (self.cli.max_pages and
-           ((page+1)-self.cli.start_page) == self.cli.max_pages):
+        if (self.opts.max_pages and
+           ((page+1)-self.opts.start_page) == self.opts.max_pages):
             return
         else:
             yield self.next_search_page_request(page, genre_id)

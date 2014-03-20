@@ -2,8 +2,8 @@
 from __future__ import unicode_literals
 
 
-class Cli(object):
-    '''Parses cli options that are shared across spiders.'''
+class Options(object):
+    '''Shared spider options.'''
 
     def __init__(self, max_tracks, start_page, max_pages):
         self._max_tracks = None
