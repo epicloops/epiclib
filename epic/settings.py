@@ -9,8 +9,11 @@ import logging
 log = logging.getLogger(__name__)
 
 
-with open(os.path.join(os.path.expanduser('~'), '.epic', 'config')) as f:
-    CONFIG = json.loads(f.read())
+try:
+    with open(os.path.join(os.path.expanduser('~'), '.epic', 'config')) as f:
+        CONFIG = json.loads(f.read())
+except IOError, e:
+    log.warning('Epic config file does not exist. %s', e)
 
 AWS_ACCESS_KEY_ID = CONFIG.get('AWS_ACCESS_KEY_ID', None)
 AWS_SECRET_ACCESS_KEY = CONFIG.get('AWS_SECRET_ACCESS_KEY', None)

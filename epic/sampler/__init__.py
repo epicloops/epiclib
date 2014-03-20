@@ -103,8 +103,7 @@ def up(profile, servers=1, display_ssh_output=False, *args, **kwargs):
         # manually for now.
         cloud_client.profile(profile=profile, names=names,
             parallel=True, display_ssh_output=display_ssh_output,
-            script_args='git v2014.1.0',
-            show_deploy_args=True)
+            script_args='git v2014.1.0', show_deploy_args=True)
     except salt.cloud.exceptions.SaltCloudConfigError, e:
         log.info(e)
         return
@@ -260,6 +259,28 @@ def provision(*args, **kwargs):
                             timeout=300)
     salt.output.display_output(data, '', MASTER_OPTS)
 
+    log.info('Writing config file.')
+    config = {
+        'AWS_ACCESS_KEY_ID': settings.AWS_ACCESS_KEY_ID,
+        'AWS_SECRET_ACCESS_KEY': settings.AWS_SECRET_ACCESS_KEY,
+        'AWS_S3_BUCKET': settings.AWS_S3_BUCKET,
+        'SQLALCHEMY_DATABASE_URI': settings.SQLALCHEMY_DATABASE_URI,
+    }
+    data = local_client.cmd(minions,
+                            'state.single',
+                            arg=[],
+                            kwarg={
+                                'fun': 'file.managed',
+                                'name': '/home/ubuntu/.epic/config',
+                                'makedirs': True,
+                                'user': 'ubuntu',
+                                'group': 'ubuntu',
+                                'contents': json.dumps(config)
+                            },
+                            expr_form='list',
+                            timeout=300)
+    salt.output.display_output(data, '', MASTER_OPTS)
+
     log.info('Cloning epic git repo.')
     data = local_client.cmd(minions,
                             'state.single',
@@ -306,28 +327,6 @@ def provision(*args, **kwargs):
                             'saltutil.refresh_modules',
                             arg=[],
                             kwarg={},
-                            expr_form='list',
-                            timeout=300)
-    salt.output.display_output(data, '', MASTER_OPTS)
-
-    log.info('Writing config file.')
-    config = {
-        'AWS_ACCESS_KEY_ID': settings.AWS_ACCESS_KEY_ID,
-        'AWS_SECRET_ACCESS_KEY': settings.AWS_SECRET_ACCESS_KEY,
-        'AWS_S3_BUCKET': settings.AWS_S3_BUCKET,
-        'SQLALCHEMY_DATABASE_URI': settings.SQLALCHEMY_DATABASE_URI,
-    }
-    data = local_client.cmd(minions,
-                            'state.single',
-                            arg=[],
-                            kwarg={
-                                'fun': 'file.managed',
-                                'name': '/home/ubuntu/.epic/config',
-                                'makedirs': True,
-                                'user': 'ubuntu',
-                                'group': 'ubuntu',
-                                'contents': json.dumps(config)
-                            },
                             expr_form='list',
                             timeout=300)
     salt.output.display_output(data, '', MASTER_OPTS)
