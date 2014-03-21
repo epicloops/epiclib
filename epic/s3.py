@@ -41,16 +41,23 @@ def get(key_name, dest):
     log.info('Got s3 key: %s to %s', k.name, dest)
     return dest
 
-def set(key_name, obj, headers=None, policy='private'):
+def _set(key_name, func, data, headers=None, policy='private'):
     k = get_key(key_name)
-    try:
-        obj.seek(0)
-    except AttributeError:
-        k.set_contents_from_string(obj, headers=headers, policy=policy)
-    else:
-        k.set_contents_from_file(obj, headers=headers, policy=policy)
+    getattr(k, func)(data, headers=headers, policy=policy)
     log.info('Set s3 key: %s', k.name)
     return k
+
+def set_from_string(key_name, string, headers=None, policy='private'):
+    func = 'set_contents_from_string'
+    return _set(key_name, func, string, headers, policy)
+
+def set_from_file(key_name, fileobj, headers=None, policy='private'):
+    func = 'set_contents_from_file'
+    return _set(key_name, func, fileobj, headers, policy)
+
+def set_from_filename(key_name, filename, headers=None, policy='private'):
+    func = 'set_contents_from_filename'
+    return _set(key_name, func, filename, headers, policy)
 
 def generate_url(key_name, expires_in=300,  query_auth=True, force_http=True):
     k = get_key(key_name)

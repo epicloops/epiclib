@@ -138,7 +138,7 @@ def download(crawl_start, spider, sampler_start, qry, limit, dl_samples=True,
         track_id = k.name.split('/')[3]
         if track_id not in track_ids:
             continue
-        dest = os.path.join(dl_dir, track_id, k.name)
+        dest = os.path.join(dl_dir, track_id, 'track.mp3')
         s3.get(k, dest)
 
     # download samples
@@ -148,7 +148,9 @@ def download(crawl_start, spider, sampler_start, qry, limit, dl_samples=True,
             track_id = k.name.split('/')[4]
             if track_id not in track_ids:
                 continue
-            dest = os.path.join(dl_dir, track_id, k.name.split('/')[5], k.name)
+            sample_type = k.name.split('/')[5]
+            sample_name = k.name.split('/')[6]
+            dest = os.path.join(dl_dir, track_id, sample_type, sample_name)
             s3.get(k, dest)
 
 def build(*args, **kwargs):
@@ -228,7 +230,7 @@ def upload(zip_name, clean=True, *args, **kwargs):
     :param zip_name: Zip file to upload.
     :param clean: Flag to remove pkg dir after uplaod.
     '''
-    s3.set('pkg/{}'.format(zip_name), zip_name)
+    s3.set_from_filename('pkg/{}'.format(zip_name), zip_name)
     sampler_cache = Cache('sampler')
     sampler_cache.purge()
     if clean:

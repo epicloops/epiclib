@@ -85,7 +85,8 @@ class TrackPipeline(object):
                                                       spider.name,
                                                       item['track_id'])
 
-        dfd = threads.deferToThread(s3.set, key_name, response.body)
+        dfd = threads.deferToThread(s3.set_from_string, key_name,
+                                    response.body)
         dfd.addCallback(self.ul_success, item, spider)
 
         return dfd

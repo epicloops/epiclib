@@ -210,7 +210,7 @@ def run(crawl_start, spider,
             # upload sample files to s3
             for i, fname in enumerate(os.listdir(sample_dir)):
                 kname = '/'.join([sampler_dir, track_id, sample_name, fname])
-                s3.set(kname, os.path.join(sample_dir, fname))
+                s3.set_from_filename(kname, os.path.join(sample_dir, fname))
                 try:
                     ret[sample_name] += 1
                 except KeyError:
