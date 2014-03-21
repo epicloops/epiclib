@@ -10,8 +10,26 @@ import subprocess
 import datetime
 import math
 
+try:
+    import boto
+    HAS_BOTO = True
+except ImportError:
+    HAS_BOTO = False
+
+try:
+    import sqlalchemy
+    HAS_SQLALCHEMY = True
+except ImportError:
+    HAS_SQLALCHEMY = False
+
+try:
+    import psycopg2
+    HAS_PSYCOPG2 = True
+except ImportError:
+    HAS_PSYCOPG2 = False
+
 import salt.client
-import salt.utils.event
+import salt.utils
 from salt.utils.event import tagify as _tagify
 
 from epic import config
@@ -24,7 +42,8 @@ log = logging.getLogger(__name__)
 
 
 def __virtual__():
-    if config.read_config():
+    if (config.read_config() and HAS_BOTO and
+        HAS_SQLALCHEMY and HAS_PSYCOPG2 and salt.utils.which('mp3splt')):
         return True
     return False
 
