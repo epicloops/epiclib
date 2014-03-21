@@ -139,8 +139,7 @@ def download(crawl_start, spider, sampler_start, qry, limit, dl_samples=True,
         if track_id not in track_ids:
             continue
         dest = os.path.join(dl_dir, track_id, k.name)
-        fname = s3.get(k, dest)
-        log.info('Downloaded: %s to %s', k, fname)
+        s3.get(k, dest)
 
     # download samples
     if dl_samples:
@@ -150,8 +149,7 @@ def download(crawl_start, spider, sampler_start, qry, limit, dl_samples=True,
             if track_id not in track_ids:
                 continue
             dest = os.path.join(dl_dir, track_id, k.name.split('/')[5], k.name)
-            fname = s3.get(k, dest)
-            log.info('Downloaded: %s to %s', k, fname)
+            s3.get(k, dest)
 
 def build(*args, **kwargs):
     '''Build contents of pkg directory to be zipped and uploaded.
