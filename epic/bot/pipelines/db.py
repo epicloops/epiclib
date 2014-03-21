@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+'''
+Persist items to db.
+'''
 from __future__ import unicode_literals
 
 from twisted.internet import threads
@@ -39,13 +42,6 @@ class DbPipeline(object):
     def process_item(self, item, spider):
 
         def _persist_item(self, item, spider):
-            sample_model = {
-                'sections': Sections,
-                'bars': Bars,
-                'beats': Beats,
-                'tatums': Tatums,
-                'segments': Segments,
-            }
             for sample_name in self.settings.getlist('ECHONEST_SAMPLES', []):
                 field = 'echonest_{}'.format(sample_name)
 
@@ -54,7 +50,9 @@ class DbPipeline(object):
                     sample['crawl_start'] = item['crawl_start']
                     sample['sample_num'] = i+1
 
-                    Model = sample_model[sample_name]
+                    for model in (Sections, Bars, Beats, Tatums, Segments):
+                        if model.__tablename__ == sample_name:
+                            Model = model
 
                     sample_record = dict([(k, v) for k, v in sample.items() if k in Model.__table__.columns])
 

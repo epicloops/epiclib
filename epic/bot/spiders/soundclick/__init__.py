@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-'''Soundclick.com spider.'''
+'''
+Soundclick.com spider.
+'''
 from __future__ import unicode_literals
 
 import re
@@ -11,8 +13,8 @@ from scrapy.selector import Selector
 from epic.bot.options import Options
 from epic.bot.utils import errback
 from epic.bot.spiders.soundclick import settings
-from epic.bot.spiders.soundclick.item import SoundclickTrackItem
-from epic.bot.spiders.soundclick.loader import SoundclickTrackItemLoader
+from epic.bot.spiders.soundclick.items import SoundclickTrackItem
+from epic.bot.spiders.soundclick.loaders import SoundclickTrackItemLoader
 
 
 class SoundclickSpider(Spider):
@@ -121,7 +123,8 @@ class SoundclickSpider(Spider):
                              '{}/td[1]/a[2]/@href'.format(trow1),
                              re=r'songid=(\d+)&')
             loader.add_xpath('artist', '{}/td[3]/a/text()'.format(trow1))
-            loader.add_xpath('artist_page_url', '{}/td[3]/a/@href'.format(trow1))
+            loader.add_xpath('artist_page_url', '{}/td[3]/a/@href'.format(
+                                                                        trow1))
             loader.add_xpath('title', '{}/td[4]/text()'.format(trow1))
             loader.add_xpath('soundclick_commercial',
                              '{}/td[5]/text()'.format(trow1))
@@ -133,7 +136,8 @@ class SoundclickSpider(Spider):
 
             item = loader.load_item()
 
-            yield Request(item['artist_page_url'], callback=self.parse_artist_page,
+            yield Request(item['artist_page_url'],
+                          callback=self.parse_artist_page,
                           errback=lambda f, i=item: errback(f, i),
                           # TODO: Cache parse_artist_page result to avoid this?
                           # Dont filter dup requests to artist page in case of

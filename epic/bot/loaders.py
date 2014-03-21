@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+'''
+Base item loaders.
+'''
 from __future__ import unicode_literals
 
 import urllib2

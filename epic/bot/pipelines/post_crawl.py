@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+'''
+Add data crawled items.
+'''
 from __future__ import unicode_literals
 
 import hashlib

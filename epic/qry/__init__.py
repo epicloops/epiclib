@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Analyzes the results of epicbot and epicsampler.
 '''

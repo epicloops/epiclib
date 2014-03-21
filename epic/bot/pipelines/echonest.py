@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+'''
+Populate items with data from echonest api.
+'''
 from __future__ import unicode_literals
 
 from pyechonest import config as econfig
@@ -9,7 +12,7 @@ from twisted.internet import threads
 from scrapy import log
 from scrapy.exceptions import DropItem
 
-from epic.bot.utils import S3FileStore
+from epic import s3
 
 
 class EchonestPipelineDropItem(DropItem):
@@ -22,7 +25,6 @@ class EchonestPipeline(object):
     def __init__(self, crawler):
         self.crawler = crawler
         self.settings = crawler.settings
-        self.store = S3FileStore.from_crawler(crawler)
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -63,7 +65,7 @@ class EchonestPipeline(object):
                     level=log.DEBUG, spider=spider,
                     key_name=item['s3_key'])
 
-            s3_key = self.store.generate_url(item['s3_key'])
+            s3_key = s3.generate_url(item['s3_key'])
             track = etrack.track_from_url(s3_key)
 
             track.get_analysis()

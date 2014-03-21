@@ -16,6 +16,7 @@ class Cache(object):
         dirname = os.path.join(os.path.expanduser('~'), '.epic', 'cache')
         if not os.path.exists(dirname):
             os.makedirs(dirname)
+            log.info('Created %s', dirname)
         self.path = os.path.join(dirname, name)
 
     def read(self):

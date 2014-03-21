@@ -14,13 +14,10 @@ import salt.client
 import salt.utils.event
 from salt.utils.event import tagify as _tagify
 
-from boto.s3 import connection as _connection
-from boto.s3 import bucket as _bucket
-from boto.s3 import key as _key
-
 from epic import config
 from epic.db import session_maker
 from epic.db.models import DeclarativeBase, SamplerErrors
+from epic import s3
 
 
 log = logging.getLogger(__name__)
@@ -30,14 +27,6 @@ def __virtual__():
     if config.read_config():
         return True
     return False
-
-def _tid_from_key(key):
-    '''
-    Return track_id from s3 key.
-
-    :param key: s3 key.
-    '''
-    return key.name.split('/')[3]
 
 def _partition(lst, n):
     '''
@@ -54,40 +43,7 @@ def _partition(lst, n):
         ret.append(lst[start:end])
     return ret
 
-def _download_file(temp_dir, key):
-    '''
-    Download s3 key to temp_dir.
-
-    :param temp_dir: Temp directory to download key to.
-    :param key: s3 key to download.
-    '''
-    track_id = _tid_from_key(key)
-    fname = os.path.join(temp_dir, track_id, key.name.split('/')[4])
-    if not os.path.exists(os.path.dirname(fname)):
-        os.makedirs(os.path.dirname(fname))
-    key.get_contents_to_filename(fname)
-    log.info('%s downloaded to %s', key.name, fname)
-    return (track_id, fname)
-
-def _upload_file(bucket, key, fname):
-    '''
-    Upload object to s3.
-
-    :param bucket: Bucket to upload file to.
-    :param key: Key name to upload file as.
-    :param fname: Filename to upload.
-    '''
-    k = _key.Key(bucket, key)
-    k.set_contents_from_filename(fname)
-    log.info('Uploaded %s to %s', fname, k)
-    k.close()
-
-def _write_cue(Session, temp_dir, crawl_start, track_id, sample_name):
-    session = Session()
-    table = DeclarativeBase.metadata.tables[sample_name]
-    samples = session.query(table).\
-                    filter_by(track_id=track_id, crawl_start=crawl_start).\
-                    order_by(table.c.start)
+def _write_cue(track_dir, samples, sample_name):
     cue = [
         'PERFORMER " "',
         'TITLE " "',
@@ -110,11 +66,10 @@ def _write_cue(Session, temp_dir, crawl_start, track_id, sample_name):
         ]
         cue += entry
 
-    session.close()
-
-    fname = os.path.join(temp_dir, track_id, '{}.cue'.format(sample_name))
+    fname = os.path.join(track_dir, '{}.cue'.format(sample_name))
     with open(fname, 'w') as f:
         f.write('\n'.join(cue))
+        log.info('Wrote %s', fname)
 
     return fname
 
@@ -134,6 +89,8 @@ def run(crawl_start, spider,
     bot_dir = '/'.join(['bot', crawl_start, spider])
     temp_dir = '/tmp/epicsampler'
     sampler_dir = '/'.join(['sampler', crawl_start, spider, sampler_start])
+
+    # init event data to send progress updates to master
     update_tag = _tagify(['monitor','update'], base='epicsampler')
     ret = {
         'assigned_tracks': 0,
@@ -146,12 +103,8 @@ def run(crawl_start, spider,
         'complete': 0,
     }
 
-    conn = _connection.S3Connection(config.AWS_ACCESS_KEY_ID,
-                                    config.AWS_SECRET_ACCESS_KEY)
-    bkt = _bucket.Bucket(conn, config.AWS_S3_BUCKET)
-
     log.info('Querying S3 and calculating workload.')
-    tracks_all = (k for k in bkt.list(bot_dir))
+    tracks_all = (k for k in s3.list(bot_dir))
 
     # limit track list based on offset and qty params
     tracks_subset = []
@@ -170,27 +123,38 @@ def run(crawl_start, spider,
     # clear temp dir
     if os.path.exists(temp_dir):
         shutil.rmtree(temp_dir)
+        log.info('Removed %s', temp_dir)
     os.makedirs(temp_dir)
+    log.info('Created %s', temp_dir)
 
-    # download tracks
-    tracks= []
+    Session = session_maker()
     for k in tracks_subset:
-        tracks.append(_download_file(temp_dir, k))
+        log.info('Processing %s', k)
+        track_id = k.name.split('/')[3]
+        track_dir = os.path.join(temp_dir, track_id)
+
+        track_file = s3.get(k, os.path.join(track_dir, 'track.mp3'))
         ret['downloaded_tracks'] += 1
         __salt__['event.fire_master'](ret, update_tag)
 
-    Session = session_maker()
-    # Generate the split sample files, and upload them to the dst_bkt
-    for track_id, track_file in tracks:
+        for sample_name in config.PROCESS_SAMPLES:
 
-        for sample_name in config.SAMPLER_SAMPLES:
-            sample_dir = os.path.join(temp_dir, track_id, sample_name)
+            # make sample_dir
+            sample_dir = os.path.join(track_dir, sample_name)
             if not os.path.exists(sample_dir):
                 os.makedirs(sample_dir)
 
-            cue_file = _write_cue(Session, temp_dir, crawl_start, track_id,
-                                  sample_name)
+            log.info('Querying database for %s data.', sample_name)
+            session = Session()
+            table = DeclarativeBase.metadata.tables[sample_name]
+            samples = session.query(table).\
+                        filter_by(track_id=track_id, crawl_start=crawl_start).\
+                        order_by(table.c.start).fetchall()
+            session.close()
+            cue_file = _write_cue(track_dir, samples, sample_name)
 
+            # split track in track_dir based on cue_file and write the samples
+            # to sample_dir
             cmd = 'mp3splt -n -x -c {0} -d {1} -o @n4 {2}'.format(cue_file,
                                                                   sample_dir,
                                                                   track_file)
@@ -224,10 +188,10 @@ def run(crawl_start, spider,
                     __salt__['event.fire_master'](ret, update_tag)
                 break
 
-            # upload sample files to dst_bkt
+            # upload sample files to s3
             for i, fname in enumerate(os.listdir(sample_dir)):
                 kname = '/'.join([sampler_dir, track_id, sample_name, fname])
-                _upload_file(bkt, kname, os.path.join(sample_dir, fname))
+                s3.set(kname, os.path.join(sample_dir, fname))
                 try:
                     ret[sample_name] += 1
                 except KeyError:

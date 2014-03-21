@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 A tool to crawl, download, split, and package Creative Commons audio files from
 the web.

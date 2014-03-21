@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Settings.
 '''
@@ -28,7 +29,7 @@ def read_config():
             'tatums',
             'segments',
         ],
-        'SAMPLER_SAMPLES' : [
+        'PROCESS_SAMPLES' : [
             'sections',
             'bars',
             'beats',

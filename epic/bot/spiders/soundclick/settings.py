@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-'''Settings for the soundclick.com spider.'''
+'''
+Soundclick-specific settings.
+'''
 from __future__ import unicode_literals
 
 GENRE_MAP = {

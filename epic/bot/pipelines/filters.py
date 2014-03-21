@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+'''
+Drop items based on filter criteria.
+'''
 from __future__ import unicode_literals
 
 from scrapy.exceptions import DropItem

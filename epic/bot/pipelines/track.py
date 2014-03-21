@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
+'''
+Download track from source and upload to s3.
+'''
 from __future__ import unicode_literals
 
-import os
-from cStringIO import StringIO
+from twisted.internet import threads
 
 from scrapy import log
 from scrapy.http import Request
 from scrapy.exceptions import DropItem
 
-from epic.bot.utils import S3FileStore
+from epic import s3
 
 
 class TrackPipelineDropItem(DropItem):
@@ -21,7 +23,6 @@ class TrackPipeline(object):
     def __init__(self, crawler):
         self.crawler = crawler
         self.settings = crawler.settings
-        self.store = S3FileStore.from_crawler(crawler)
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -80,20 +81,18 @@ class TrackPipeline(object):
             '{}/file_download_count'.format(self.__class__.__name__),
             spider=spider)
 
-        ext = os.path.splitext(request.url)[1]
-        path = '{0}/track{1}'.format(item['track_id'], ext)
+        key_name = 'bot/{0}/{1}/{2}/track.mp3'.format(item['crawl_start'],
+                                                      spider.name,
+                                                      item['track_id'])
 
-        buf = StringIO(response.body)
-        buf.seek(0)
-
-        dfd = self.store.write(spider, path, buf.getvalue())
+        dfd = threads.deferToThread(s3.set, key_name, response.body)
         dfd.addCallback(self.ul_success, item, spider)
 
         return dfd
 
-    def ul_success(self, key_name, item, spider):
+    def ul_success(self, key, item, spider):
 
-        item['s3_key'] = key_name
+        item['s3_key'] = key.name
 
         spider.crawler.stats.inc_value(
             '{}/file_upload_count'.format(self.__class__.__name__),
@@ -101,6 +100,6 @@ class TrackPipeline(object):
 
         log.msg(format='Uploaded: <%(url)s> uploaded to <%(key_name)s>',
                 level=log.DEBUG, spider=spider, url=item['track_page_url'],
-                key_name=key_name)
+                key_name=item['s3_key'])
 
         return item

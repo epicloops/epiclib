@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+'''
+Scrapy extensions.
+'''
 from __future__ import unicode_literals
 
 from twisted.internet import threads
@@ -12,6 +15,7 @@ from epic.db.models import Dropped
 
 
 class DroppedItemsCsv(object):
+    '''Writes dropped items to db.'''
 
     def __init__(self, crawler):
         self.stats = crawler.stats

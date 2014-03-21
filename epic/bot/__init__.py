@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Crawls the web searching for Creative Commons tracks and runs them against the
 echonest api.

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Downloads, packages, and uploads the results of epicbot and epicsampler.
 '''
@@ -6,14 +7,12 @@ import shutil
 import logging
 import zipfile
 
-import boto
-from boto import s3
-
 from epic import config
 from epic.cache import Cache
 from epic.db import session_maker
 from epic.db.models import DeclarativeBase, Tracks
 import epic.qry
+from epic import s3
 
 
 log = logging.getLogger(__name__)
@@ -25,29 +24,6 @@ ECHONEST_KEYS = [
 
 ECHONEST_MODES = ['Major', 'Minor']
 
-
-def _tid_from_key(key):
-    '''Return tid from s3 key.
-
-    :param key: s3 key.
-    '''
-    return key.name.split('/')[3]
-
-def _download_file(dl_dir, key):
-    '''Download s3 keys to dl_dir.
-
-    :param dl_dir: Directory to download files to.
-    :param key: s3 key to download.
-    '''
-    fname = os.path.join(dl_dir, os.path.basename(key.name))
-    if not os.path.exists(dl_dir):
-        os.makedirs(dl_dir)
-    key.get_contents_to_filename(fname)
-    return fname
-
-def _get_s3_conn():
-    return boto.connect_s3(config.AWS_ACCESS_KEY_ID,
-                           config.AWS_SECRET_ACCESS_KEY)
 
 def _write(fname, data):
     path = os.path.dirname(fname)
@@ -146,35 +122,35 @@ def download(crawl_start, spider, sampler_start, qry, limit, dl_samples=True,
         sampler_cache.purge()
     sampler_cache.write(crawl_start)
 
-    tids = getattr(epic.qry, qry)(crawl_start, limit, output=False)
+    track_ids = getattr(epic.qry, qry)(crawl_start, limit, output=False)
 
     dl_dir = os.path.join(os.getcwd(), 'dl')
 
     if os.path.exists(dl_dir):
         shutil.rmtree(dl_dir)
+        log.info('Removed %s', dl_dir)
     os.makedirs(dl_dir)
-
-    conn = _get_s3_conn()
-    bkt = s3.bucket.Bucket(conn, config.AWS_S3_BUCKET)
+    log.info('Created %s', dl_dir)
 
     # download tracks
-    s3_tracks = '/'.join(['bot', crawl_start, spider])
-    tracks_all = (k for k in bkt.list(s3_tracks))
-    _tracks = (k for k in tracks_all if _tid_from_key(k) in tids)
-
-    for k in _tracks:
-        tid_dir = os.path.join(dl_dir, _tid_from_key(k))
-        fname = _download_file(tid_dir, k)
+    bot_dir = '/'.join(['bot', crawl_start, spider])
+    for k in s3.list(bot_dir):
+        track_id = k.name.split('/')[3]
+        if track_id not in track_ids:
+            continue
+        dest = os.path.join(dl_dir, track_id, k.name)
+        fname = s3.get(k, dest)
         log.info('Downloaded: %s to %s', k, fname)
 
     # download samples
     if dl_samples:
-        s3_samples = '/'.join(['sampler', crawl_start, spider, sampler_start])
-        samples = (k for k in bkt.list(s3_samples) if k.name.split('/')[4] in tids)
-        for k in samples:
-            sample_dir = os.path.join(dl_dir, k.name.split('/')[4],
-                                k.name.split('/')[5])
-            fname = _download_file(sample_dir, k)
+        sampler_dir = '/'.join(['sampler', crawl_start, spider, sampler_start])
+        for k in s3.list(sampler_dir):
+            track_id = k.name.split('/')[4]
+            if track_id not in track_ids:
+                continue
+            dest = os.path.join(dl_dir, track_id, k.name.split('/')[5], k.name)
+            fname = s3.get(k, dest)
             log.info('Downloaded: %s to %s', k, fname)
 
 def build(*args, **kwargs):
@@ -201,34 +177,34 @@ def build(*args, **kwargs):
 
     Session = session_maker()
 
-    tids = os.listdir(dl_dir)
-    for i, tid in enumerate(tids):
-        tid_dir = os.path.join(pkg_dir, tid)
+    track_ids = os.listdir(dl_dir)
+    for i, track_id in enumerate(track_ids):
+        track_dir = os.path.join(pkg_dir, track_id)
 
         session = Session()
         track = session.query(Tracks).\
-                    filter(Tracks.track_id == tid,
+                    filter(Tracks.track_id == track_id,
                            Tracks.crawl_start == crawl_start).one()
 
-        fname = _write_license(tid_dir, track)
+        fname = _write_license(track_dir, track)
         log.info('Created: %s', fname)
-        fname = _write_profile(tid_dir, track)
+        fname = _write_profile(track_dir, track)
         log.info('Created: %s', fname)
 
-        sample_types = ('sections', 'bars', 'beats', 'tatums', 'segments')
-        sample_dirs = set(os.listdir(tid_dir)).intersection(set(sample_types))
+        sample_dirs = set(os.listdir(track_dir)).intersection(
+                                                set(config.PROCESS_SAMPLES))
         for sample_type in sample_dirs:
             table = DeclarativeBase.metadata.tables[sample_type]
             samples = session.query(table).\
-                            filter(table.c.track_id == tid,
+                            filter(table.c.track_id == track_id,
                                    table.c.crawl_start == crawl_start)
-            fname = _write_manifest(tid_dir, str(table), samples)
+            fname = _write_manifest(track_dir, str(table), samples)
             log.info('Created: %s', fname)
 
-        # rename tid_dir from hash to friendlier number
-        dst = os.path.join(pkg_dir, '{:02d}'.format(i))
-        os.rename(tid_dir, dst)
-        log.info('Renamed: %s to %s', tid_dir, dst)
+        # rename track_dir from hash to friendlier number
+        dest = os.path.join(pkg_dir, '{:02d}'.format(i))
+        os.rename(track_dir, dest)
+        log.info('Renamed: %s to %s', track_dir, dest)
 
 def zip_(zip_name, *args, **kwargs):
     '''Zip the contents of the pkg directory.'''
@@ -254,12 +230,7 @@ def upload(zip_name, clean=True, *args, **kwargs):
     :param zip_name: Zip file to upload.
     :param clean: Flag to remove pkg dir after uplaod.
     '''
-    conn = _get_s3_conn()
-    bucket = s3.bucket.Bucket(conn, config.AWS_S3_BUCKET)
-    k = s3.key.Key(bucket, 'pkg/{}'.format(zip_name))
-    k.set_contents_from_filename(zip_name)
-    log.info('Uploaded: %s to %s', zip_name, k)
-    k.close()
+    s3.set('pkg/{}'.format(zip_name), zip_name)
     sampler_cache = Cache('sampler')
     sampler_cache.purge()
     if clean:
@@ -278,8 +249,7 @@ def pkg(crawl_start, spider, sampler_start, qry, limit, zip_name, clean=True,
     :param crawl_start: Start timestamp from epicbot crawl to process.
     :param clean: Flag to remove pkg dir after uplaod.
     '''
-    download(crawl_start, spider, sampler_start, qry, limit, *args,
-             **kwargs)
+    download(crawl_start, spider, sampler_start, qry, limit, *args, **kwargs)
     build(*args, **kwargs)
     zip_name = zip_(zip_name, *args, **kwargs)
     upload(zip_name, clean, *args, **kwargs)
