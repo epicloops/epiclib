@@ -149,7 +149,7 @@ def run(crawl_start, spider,
             table = DeclarativeBase.metadata.tables[sample_name]
             samples = session.query(table).\
                         filter_by(track_id=track_id, crawl_start=crawl_start).\
-                        order_by(table.c.start).fetchall()
+                        order_by(table.c.start).all()
             session.close()
             cue_file = _write_cue(track_dir, samples, sample_name)
 
