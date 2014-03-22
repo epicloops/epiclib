@@ -164,170 +164,137 @@ def provision(*args, **kwargs):
         log.info('No servers have been spun up. Run `epicsampler up`')
         return
 
-    log.info('Installing python2.')
-    data = local_client.cmd(minions,
-                            'state.single',
-                            arg=[],
-                            kwarg={
-                                'fun': 'pkg.installed',
-                                'name': 'python',
-                            },
-                            expr_form='list',
-                            timeout=300)
-    salt.output.display_output(data, '', MASTER_OPTS)
+    provision_steps = [
+        {
+            'log': 'Installing python2.',
+            'func': 'state.single',
+            'kwarg': {
+                'fun': 'pkg.installed',
+                'name': 'python',
+            },
+        },
+        {
+            'log': 'Installing python-dev.',
+            'func': 'state.single',
+            'kwarg': {
+                'fun': 'pkg.installed',
+                'name': 'python-dev',
+            },
+        },
+        {
+            'log': 'Installing libpq-dev.',
+            'func': 'state.single',
+            'kwarg': {
+                'fun': 'pkg.installed',
+                'name': 'libpq-dev',
+            },
+        },
+        {
+            'log': 'Adding apt repo deb '
+                   'http://mp3splt.sourceforge.net/repository precise main.',
+            'func': 'state.single',
+            'kwarg': {
+                'fun': 'pkgrepo.managed',
+                'name': 'deb http://mp3splt.sourceforge.net/repository precise main',
+            },
+        },
+        {
+            'log': 'Installing libmp3splt0-mp3, libmp3splt0-ogg, '
+                   'libmp3splt0-flac, mp3splt.',
+            'func': 'state.single',
+            'kwarg': {
+                'fun': 'pkg.installed',
+                'name': None,
+                'pkgs': [
+                    'libmp3splt0-mp3',
+                    'libmp3splt0-ogg',
+                    'libmp3splt0-flac',
+                    'mp3splt',
+                ],
+                'skip_verify': True
+            },
+        },
+        {
+            'log': 'Downloading pip install script.',
+            'func': 'state.single',
+            'kwarg': {
+                'fun': 'cmd.run',
+                'cwd': '/tmp',
+                'name': 'wget https://raw.github.com/pypa/pip/master/contrib/get-pip.py',
+            },
+        },
+        {
+            'log': 'Installing pip.',
+            'func': 'state.single',
+            'kwarg': {
+                'fun': 'cmd.run',
+                'cwd': '/tmp',
+                'name': 'python get-pip.py',
+            },
+        },
+        {
+            'log': 'Writing config file.',
+            'func': 'state.single',
+            'kwarg': {
+                'fun': 'file.managed',
+                'name': '/root/.epic/config',
+                'makedirs': True,
+                'contents': json.dumps({
+                    'AWS_ACCESS_KEY_ID': config.AWS_ACCESS_KEY_ID,
+                    'AWS_SECRET_ACCESS_KEY': config.AWS_SECRET_ACCESS_KEY,
+                    'AWS_S3_BUCKET': config.AWS_S3_BUCKET,
+                    'SQLALCHEMY_DATABASE_URI': config.SQLALCHEMY_DATABASE_URI,
+                })
+            },
+        },
+        {
+            'log': 'Cloning epic git repo.',
+            'func': 'state.single',
+            'kwarg': {
+                'fun': 'git.latest',
+                'name': 'https://github.com/ajw0100/epic.git',
+                'target': '/tmp/epic',
+                'force': True,
+                'force_checkout': True,
+            },
+        },
+        {
+            'log': 'Installing epic requirements.',
+            'func': 'state.single',
+            'kwarg': {
+                'fun': 'cmd.run',
+                'name': 'pip install -r ./epic/requirements_sampler.txt',
+                'cwd': '/tmp',
+            },
+        },
+        {
+            'log': 'Installing epic.',
+            'func': 'state.single',
+            'kwarg': {
+                'fun': 'cmd.run',
+                'name': 'SAMPLER_INSTALL=true pip install ./epic',
+                'cwd': '/tmp',
+            },
+        },
+        {
+            'log': 'Refreshing modules.',
+            'func': 'saltutil.refresh_modules',
+        },
 
-    log.info('Installing python-dev.')
-    data = local_client.cmd(minions,
-                            'state.single',
-                            arg=[],
-                            kwarg={
-                                'fun': 'pkg.installed',
-                                'name': 'python-dev',
-                            },
-                            expr_form='list',
-                            timeout=300)
-    salt.output.display_output(data, '', MASTER_OPTS)
+    ]
 
-    log.info('Installing libpq-dev.')
-    data = local_client.cmd(minions,
-                            'state.single',
-                            arg=[],
-                            kwarg={
-                                'fun': 'pkg.installed',
-                                'name': 'libpq-dev',
-                            },
-                            expr_form='list',
-                            timeout=300)
-    salt.output.display_output(data, '', MASTER_OPTS)
-
-    log.info('Adding apt repo deb http://mp3splt.sourceforge.net/repository '
-             'precise main.')
-    data = local_client.cmd(minions,
-                            'state.single',
-                            arg=[],
-                            kwarg={
-                                'fun': 'pkgrepo.managed',
-                                'name': 'deb http://mp3splt.sourceforge.net/repository precise main',
-                            },
-                            expr_form='list',
-                            timeout=300)
-    salt.output.display_output(data, '', MASTER_OPTS)
-
-    log.info('Installing libmp3splt0-mp3, libmp3splt0-ogg, libmp3splt0-flac, '
-             'mp3splt.')
-    data = local_client.cmd(minions,
-                            'state.single',
-                            arg=[],
-                            kwarg={
-                                'fun': 'pkg.installed',
-                                'name': None,
-                                'pkgs': [
-                                    'libmp3splt0-mp3',
-                                    'libmp3splt0-ogg',
-                                    'libmp3splt0-flac',
-                                    'mp3splt',
-                                ],
-                                'skip_verify': True
-                            },
-                            expr_form='list',
-                            timeout=300)
-    salt.output.display_output(data, '', MASTER_OPTS)
-
-    log.info('Downloading pip install script.')
-    data = local_client.cmd(minions,
-                            'state.single',
-                            arg=[],
-                            kwarg={
-                                'fun': 'cmd.run',
-                                'cwd': '/tmp',
-                                'name': 'wget https://raw.github.com/pypa/pip/master/contrib/get-pip.py',
-                            },
-                            expr_form='list',
-                            timeout=300)
-    salt.output.display_output(data, '', MASTER_OPTS)
-
-    log.info('Installing pip.')
-    data = local_client.cmd(minions,
-                            'state.single',
-                            arg=[],
-                            kwarg={
-                                'fun': 'cmd.run',
-                                'cwd': '/tmp',
-                                'name': 'python get-pip.py',
-                            },
-                            expr_form='list',
-                            timeout=300)
-    salt.output.display_output(data, '', MASTER_OPTS)
-
-    log.info('Writing config file.')
-    sampler_config = {
-        'AWS_ACCESS_KEY_ID': config.AWS_ACCESS_KEY_ID,
-        'AWS_SECRET_ACCESS_KEY': config.AWS_SECRET_ACCESS_KEY,
-        'AWS_S3_BUCKET': config.AWS_S3_BUCKET,
-        'SQLALCHEMY_DATABASE_URI': config.SQLALCHEMY_DATABASE_URI,
-    }
-    data = local_client.cmd(minions,
-                            'state.single',
-                            arg=[],
-                            kwarg={
-                                'fun': 'file.managed',
-                                'name': '/root/.epic/config',
-                                'makedirs': True,
-                                'contents': json.dumps(sampler_config)
-                            },
-                            expr_form='list',
-                            timeout=300)
-    salt.output.display_output(data, '', MASTER_OPTS)
-
-    log.info('Cloning epic git repo.')
-    data = local_client.cmd(minions,
-                            'state.single',
-                            arg=[],
-                            kwarg={
-                                'fun': 'git.latest',
-                                'name': 'https://github.com/ajw0100/epic.git',
-                                'target': '/tmp/epic',
-                                'force': True,
-                                'force_checkout': True,
-                            },
-                            expr_form='list',
-                            timeout=300)
-    salt.output.display_output(data, '', MASTER_OPTS)
-
-    log.info('Installing epic requirements.')
-    data = local_client.cmd(minions,
-                            'state.single',
-                            arg=[],
-                            kwarg={
-                                'fun': 'cmd.run',
-                                'name': 'pip install -r ./epic/requirements_sampler.txt',
-                                'cwd': '/tmp',
-                            },
-                            expr_form='list',
-                            timeout=300)
-    salt.output.display_output(data, '', MASTER_OPTS)
-
-    log.info('Installing epic.')
-    data = local_client.cmd(minions,
-                            'state.single',
-                            arg=[],
-                            kwarg={
-                                'fun': 'cmd.run',
-                                'name': 'SAMPLER_INSTALL=true pip install ./epic',
-                                'cwd': '/tmp',
-                            },
-                            expr_form='list',
-                            timeout=300)
-    salt.output.display_output(data, '', MASTER_OPTS)
-
-    log.info('Refreshing modules.')
-    data = local_client.cmd(minions,
-                            'saltutil.refresh_modules',
-                            arg=[],
-                            kwarg={},
-                            expr_form='list',
-                            timeout=300)
-    salt.output.display_output(data, '', MASTER_OPTS)
+    for step in provision_steps:
+        try:
+            log.info(step['log'])
+        except KeyError:
+            pass
+        data = local_client.cmd(minions,
+                                step['func'],
+                                arg=[],
+                                kwarg=step.get('kwarg', {}),
+                                expr_form='list',
+                                timeout=300)
+        salt.output.display_output(data, '', MASTER_OPTS)
 
 def run(crawl_start, spider, offset=0, qty=-1, *args, **kwargs):
     '''
