@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-Settings.
+Load config file.
 '''
 import sys
 import os
