@@ -12,7 +12,7 @@ from twisted.internet import threads
 from scrapy import log
 from scrapy.exceptions import DropItem
 
-from epic import s3
+from epic.filestores import s3
 
 
 class EchonestPipelineDropItem(DropItem):
@@ -65,8 +65,8 @@ class EchonestPipeline(object):
                     level=log.DEBUG, spider=spider,
                     key_name=item['s3_key'])
 
-            s3_key = s3.generate_url(item['s3_key'])
-            track = etrack.track_from_url(s3_key)
+            s3_url = s3.RootStore().generate_url(item['s3_key'])
+            track = etrack.track_from_url(s3_url)
 
             track.get_analysis()
 

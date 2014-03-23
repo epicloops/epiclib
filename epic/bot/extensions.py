@@ -60,3 +60,20 @@ class DroppedItemsCsv(object):
             return item
 
         return threads.deferToThread(_persist_item, item)
+
+
+class CrawlerStats(object):
+    '''Writes dropped items to db.'''
+
+    def __init__(self, crawler):
+        self.stats = crawler.stats
+        self.settings = crawler.settings
+        self.stats.set_value('start_time_str', '{:%Y-%m-%dT%H-%M-%S}'.format(
+                                        self.stats.get_value('start_time')))
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        if not crawler.settings.getbool('CRAWLER_STATS_ENABLED'):
+            raise NotConfigured
+
+        return cls(crawler)

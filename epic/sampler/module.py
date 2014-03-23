@@ -35,7 +35,7 @@ from salt.utils.event import tagify as _tagify
 from epic import config
 from epic.db import session_maker
 from epic.db.models import DeclarativeBase, SamplerErrors
-from epic import s3
+from epic.filestores.s3 import BotStore, SamplerStore
 
 
 log = logging.getLogger(__name__)
@@ -104,10 +104,10 @@ def run(crawl_start, spider,
 
         salt 'sampler-*' epicsampler.run crawl_start=2014-01-20T01-34-37 spider=soundclick
     '''
-    # define some common vars
-    bot_dir = '/'.join(['bot', crawl_start, spider])
+    # init file stores
+    bot_store = BotStore(crawl_start, spider)
     temp_dir = '/tmp/epicsampler'
-    sampler_dir = '/'.join(['sampler', crawl_start, spider, sampler_start])
+    sampler_store = SamplerStore(crawl_start, spider, sampler_start)
 
     # init event data to send progress updates to master
     update_tag = _tagify(['monitor','update'], base='epicsampler')
@@ -123,7 +123,7 @@ def run(crawl_start, spider,
     }
 
     log.info('Querying S3 and calculating workload.')
-    tracks_all = (k for k in s3.list(bot_dir))
+    tracks_all = (k for k in bot_store.list())
 
     # limit track list based on offset and qty params
     tracks_subset = []
@@ -152,7 +152,7 @@ def run(crawl_start, spider,
         track_id = k.name.split('/')[3]
         track_dir = os.path.join(temp_dir, track_id)
 
-        track_file = s3.get(k, os.path.join(track_dir, 'track.mp3'))
+        track_file = bot_store.get(k, os.path.join(track_dir, 'track.mp3'))
         ret['downloaded_tracks'] += 1
         __salt__['event.fire_master'](ret, update_tag)
 
@@ -209,8 +209,9 @@ def run(crawl_start, spider,
 
             # upload sample files to s3
             for i, fname in enumerate(os.listdir(sample_dir)):
-                kname = '/'.join([sampler_dir, track_id, sample_name, fname])
-                s3.set_from_filename(kname, os.path.join(sample_dir, fname))
+                key_name = '/'.join([track_id, sample_name, fname])
+                sampler_store.set_from_filename(key_name,
+                                            os.path.join(sample_dir, fname))
                 try:
                     ret[sample_name] += 1
                 except KeyError:

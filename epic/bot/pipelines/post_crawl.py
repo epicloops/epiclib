@@ -19,8 +19,7 @@ class PostCrawlPipeline(object):
 
     def process_item(self, item, spider):
 
-        item['crawl_start'] = '{:%Y-%m-%dT%H-%M-%S}'.format(
-                                            self.stats.get_value('start_time'))
+        item['crawl_start'] = self.stats.get_value('start_time_str')
 
         m = hashlib.md5()
         m.update(item.get('track_url', 'Not populated.'))

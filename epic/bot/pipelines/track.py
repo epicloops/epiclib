@@ -7,10 +7,11 @@ from __future__ import unicode_literals
 from twisted.internet import threads
 
 from scrapy import log
+from scrapy import signals
 from scrapy.http import Request
 from scrapy.exceptions import DropItem
 
-from epic import s3
+from epic.filestores import s3
 
 
 class TrackPipelineDropItem(DropItem):
@@ -22,11 +23,19 @@ class TrackPipeline(object):
 
     def __init__(self, crawler):
         self.crawler = crawler
+        self.stats = crawler.stats
         self.settings = crawler.settings
+        self.s3 = None
 
     @classmethod
     def from_crawler(cls, crawler):
-        return cls(crawler)
+        ext = cls(crawler)
+        crawler.signals.connect(ext.spider_opened, signals.spider_opened)
+        return ext
+
+    def spider_opened(self, spider):
+        self.s3 = s3.BotStore(self.stats.get_value('start_time_str'),
+                              spider.name)
 
     def process_item(self, item, spider):
 
@@ -81,11 +90,9 @@ class TrackPipeline(object):
             '{}/file_download_count'.format(self.__class__.__name__),
             spider=spider)
 
-        key_name = 'bot/{0}/{1}/{2}/track.mp3'.format(item['crawl_start'],
-                                                      spider.name,
-                                                      item['track_id'])
+        key_name = '{2}/track.mp3'.format(item['track_id'])
 
-        dfd = threads.deferToThread(s3.set_from_string, key_name,
+        dfd = threads.deferToThread(self.s3.set_from_string, key_name,
                                     response.body)
         dfd.addCallback(self.ul_success, item, spider)
 

@@ -90,6 +90,8 @@ def read_config():
 
         'PERSIST_DROPPED_ITEMS_ENABLED' : True,
 
+        'CRAWLER_STATS_ENABLED' : True,
+
         # CLOSESPIDER_TIMEOUT :
         'CLOSESPIDER_ITEMCOUNT' : 1000,
         'CLOSESPIDER_PAGECOUNT' : 20000, # ~1000 tracks at $30 conservative

@@ -12,7 +12,7 @@ from epic.cache import Cache
 from epic.db import session_maker
 from epic.db.models import DeclarativeBase, Tracks
 import epic.qry
-from epic import s3
+from epic.filestores.s3 import BotStore, SamplerStore, PkgStore
 
 
 log = logging.getLogger(__name__)
@@ -117,6 +117,9 @@ def download(crawl_start, spider, sampler_start, qry, limit, dl_samples=True,
     :param limit: Number of tracks to download.
     :param dl_samples: Flag to prevent samples from being downloaded.
     '''
+    bot_store = BotStore(crawl_start, spider)
+    sampler_store = SamplerStore(crawl_start, spider, sampler_start)
+
     sampler_cache = Cache('sampler')
     if sampler_cache.read():
         sampler_cache.purge()
@@ -133,25 +136,23 @@ def download(crawl_start, spider, sampler_start, qry, limit, dl_samples=True,
     log.info('Created %s', dl_dir)
 
     # download tracks
-    bot_dir = '/'.join(['bot', crawl_start, spider])
-    for k in s3.list(bot_dir):
+    for k in bot_store.list():
         track_id = k.name.split('/')[3]
         if track_id not in track_ids:
             continue
         dest = os.path.join(dl_dir, track_id, 'track.mp3')
-        s3.get(k, dest)
+        bot_store.get(k, dest)
 
     # download samples
     if dl_samples:
-        sampler_dir = '/'.join(['sampler', crawl_start, spider, sampler_start])
-        for k in s3.list(sampler_dir):
+        for k in sampler_store.list():
             track_id = k.name.split('/')[4]
             if track_id not in track_ids:
                 continue
             sample_type = k.name.split('/')[5]
             sample_name = k.name.split('/')[6]
             dest = os.path.join(dl_dir, track_id, sample_type, sample_name)
-            s3.get(k, dest)
+            sampler_store.get(k, dest)
 
 def build(*args, **kwargs):
     '''Build contents of pkg directory to be zipped and uploaded.
@@ -230,7 +231,8 @@ def upload(zip_name, clean=True, *args, **kwargs):
     :param zip_name: Zip file to upload.
     :param clean: Flag to remove pkg dir after uplaod.
     '''
-    s3.set_from_filename('pkg/{}'.format(zip_name), zip_name)
+    pkg_store = PkgStore()
+    pkg_store.set_from_filename(zip_name, zip_name)
     sampler_cache = Cache('sampler')
     sampler_cache.purge()
     if clean:
