@@ -63,7 +63,7 @@ class DroppedItemsCsv(object):
 
 
 class CrawlerStats(object):
-    '''Writes dropped items to db.'''
+    '''Add custom stats to crawler object.'''
 
     def __init__(self, crawler):
         self.stats = crawler.stats

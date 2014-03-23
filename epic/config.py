@@ -85,6 +85,7 @@ def read_config():
         },
 
         'EXTENSIONS' : {
+            'epic.bot.extensions.CrawlerStats': 200,
             'epic.bot.extensions.DroppedItemsCsv': 300,
         },
 
