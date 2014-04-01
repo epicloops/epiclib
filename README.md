@@ -50,7 +50,7 @@ file is ready to be split.
 This package is responsible for splitting audio files found by [epic.bot/](epic.bot/)
 into sections, bars and beats. It first listens for messages from sqs
 indicating a file is ready to be split. Then it gets the file from s3, queries
-the databse to get the echonest data related to that file and uses this data to
+the database to get the echonest data related to that file and uses this data to
 split the file with
 [libmp3splt](http://mp3splt.sourceforge.net/mp3splt_page/home.php).
 
@@ -58,7 +58,7 @@ split the file with
 ## Installation
 The `epic` package is a [namespace package](http://pythonhosted.org/setuptools/setuptools.html#namespace-packages)
 which allows the `epic.bot` and `epic.sampler` packages to be installed
-independently of eachother. This is desirable for two reasons:
+independently of each other. This is desirable for two reasons:
 
 - `epic.bot` is a web crawler and therefore memory and network intensive.
 `epic.sampler` is an mp3 splitter and therefore cpu intensive. Ideally these
@@ -69,13 +69,14 @@ absolutely required for a particular component.
 
 ### Installation steps:
 1. Clone the repo
-  - ```git clone https://github.com/ajw0100/epic.git```
+```git clone https://github.com/ajw0100/epic.git```
 2. Install `epic`
-  - ```pip install -r ./epic/epic/requirements.txt ./epic/epic```
+```pip install -r ./epic/epic/requirements.txt ./epic/epic```
 3. Install `epic.bot` and/or `epic.sampler`
   - `epic.bot`:
     - ```pip install -r ./epic/epic.bot/requirements.txt ./epic/epic.bot```
   - `epic.sampler`:
+    - Ensure `libmp3splt` is installed
     - ```pip install -r ./epic/epic.sampler/requirements.txt ./epic/epic.sampler```
 
 ### Installation example:
