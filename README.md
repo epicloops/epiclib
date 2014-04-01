@@ -68,19 +68,36 @@ versa. As separate packages, we only have to install the dependencies that are
 absolutely required for a particular component.
 
 ### Installation steps:
-1. Clone the repo
-```git clone https://github.com/ajw0100/epic.git```
-2. Install `epic`
-```pip install -r ./epic/epic/requirements.txt ./epic/epic```
-3. Install `epic.bot` and/or `epic.sampler`
-  - `epic.bot`:
-    - ```pip install -r ./epic/epic.bot/requirements.txt ./epic/epic.bot```
-  - `epic.sampler`:
-    - Ensure `libmp3splt` is installed
-    - ```pip install -r ./epic/epic.sampler/requirements.txt ./epic/epic.sampler```
+1. Clone the repo:
+```
+git clone https://github.com/ajw0100/epic.git
+```
+2. Install `epic`:
+```
+# epic
+# ----
+# Make sure sqlalchemy drivers are installed
+
+pip install -r ./epic/epic/requirements.txt ./epic/epic
+```
+3. Install `epic.bot` and/or `epic.sampler`:
+```
+# epic.bot
+# --------
+# Make sure scrapy dependencies are installed
+
+pip install -r ./epic/epic.bot/requirements.txt ./epic/epic.bot
+
+
+# epic.sampler
+# ------------
+# Make sure libmp3splt is installed
+
+pip install -r ./epic/epic.sampler/requirements.txt ./epic/epic.sampler
+```
 
 ### Installation example:
-For a working example of how to get this up and running see this saltstack
+For a rough working example of how to get this up and running see this saltstack
 repo: [https://github.com/ajw0100/epic-states](https://github.com/ajw0100/epic-states)
 
 <a name="config"/>
