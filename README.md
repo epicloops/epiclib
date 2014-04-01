@@ -84,7 +84,10 @@ pip install -r ./epic/epic/requirements.txt ./epic/epic
 ```
 # epic.bot
 # --------
-# Make sure scrapy dependencies are installed
+# Make sure scrapy dependencies are installed. This may include libs such as:
+#  - libxml2-dev
+#  - libxslt1-dev
+#  - libssl1.0.0
 
 pip install -r ./epic/epic.bot/requirements.txt ./epic/epic.bot
 
