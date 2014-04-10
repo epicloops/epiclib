@@ -6,6 +6,13 @@ from __future__ import unicode_literals
 
 import hashlib
 
+from scrapy.exceptions import DropItem
+
+
+class PostCrawlPipelineDropItem(DropItem):
+
+    pass
+
 
 class PostCrawlPipeline(object):
 
