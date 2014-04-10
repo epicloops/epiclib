@@ -6,7 +6,7 @@ import argparse
 import logging
 import sys
 
-from epic.log import LEVELS, init
+from epic.log import LEVEL_KEYS, init
 from epic import config
 from epic.db import session_scope
 
@@ -38,7 +38,7 @@ class CmdMeta(type):
                        'run `{} SUBCOMMAND -h`'.format(parser['name'])
             )
             instance.parser.add_argument('-l', '--loglevel', default='info',
-                                    choices=LEVELS.keys(),
+                                    choices=LEVEL_KEYS,
                                     dest='loglevel', help='Set log level.')
             instance.parser.add_argument('--version', action='version',
                                     version=parser['version'],
@@ -73,14 +73,13 @@ class Cmd(object):
     @classmethod
     def run(cls):
         args = cls().parser.parse_args()
-        init(args.loglevel)
 
         if not config.read_config():
             sys.exit()
 
-        echo_sql = True if args.loglevel == 'debug' else False
+        init(args.loglevel, config.LOG_FILE)
 
-        with session_scope(echo=echo_sql) as session:
+        with session_scope() as session:
             args.session = session
             try:
                 args.func(**args.__dict__)

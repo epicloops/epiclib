@@ -18,16 +18,16 @@ from epic.db.models import Base
 log = logging.getLogger(__name__)
 
 
-def engine(echo=False):
-    return create_engine(config.SQLALCHEMY_DATABASE_URI, echo=echo)
+def engine():
+    return create_engine(config.SQLALCHEMY_DATABASE_URI)
 
-def session(echo=False):
-    return Session(bind=engine(echo))
+def session():
+    return Session(bind=engine())
 
 @contextmanager
-def session_scope(echo=False):
+def session_scope():
     '''Provide a transactional scope around a series of operations.'''
-    sess = session(echo)
+    sess = session()
     try:
         yield sess
         sess.commit()

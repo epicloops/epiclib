@@ -19,6 +19,7 @@ def read_config():
         'TMP_DIR': os.path.join(os.path.expanduser('~'), '.epic', 'tmp'),
         'CONFIG_FILE': os.path.join(os.path.expanduser('~'),
                                     '.epic', 'config'),
+        'LOG_FILE': os.path.join(os.path.expanduser('~'), '.epic', 'log.log'),
 
         # this list is used by the sampler to determine which samples to split.
         # tatums and segments have such a short duration they are not worth
@@ -57,6 +58,10 @@ def read_config():
         # SCRAPY
         'BOT_NAME': 'epicbot',
         'SPIDER_MODULES': ['epic.bot.spiders'],
+        # don't use scrapy.log.ScrapyFileLogObserver instead we use
+        # twisted.python.log.PythonLoggingObserver in epic.bot.__init__.py
+        # to redirect log events toPython's standard logging module
+        'LOG_ENABLED': False,
         'LOG_LEVEL': 'DEBUG',
 
         # optimized

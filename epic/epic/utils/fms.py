@@ -55,13 +55,13 @@ class S3FM(object):
         if not os.path.exists(os.path.dirname(dest)):
             os.makedirs(os.path.dirname(dest))
         k.get_contents_to_filename(dest)
-        log.info('Got s3 key: %s to %s', k.name, dest)
+        log.debug('Got s3 key: %s to %s', k.name, dest)
         return dest
 
     def _set(self, key, func, data, headers=None, policy='private'):
         k = self.get_key(key)
         getattr(k, func)(data, headers=headers, policy=policy)
-        log.info('Set s3 key: %s', k.name)
+        log.debug('Set s3 key: %s', k.name)
         return k
 
     def set_from_string(self, key, string, headers=None, policy='private'):
@@ -97,7 +97,7 @@ class LocalFM(object):
         abspath = self.abspath(path)
         if not os.path.exists(abspath):
             os.makedirs(abspath)
-            log.info('Created %s', abspath)
+            log.debug('Created %s', abspath)
         return abspath
 
     def read(self, fname):
@@ -107,10 +107,10 @@ class LocalFM(object):
         abspath = self.abspath(fname)
         with open(abspath, 'w') as f:
             f.write(data)
-            log.info('Wrote to %s', abspath)
+            log.debug('Wrote to %s', abspath)
         return abspath
 
     def purge(self):
         if os.path.exists(self.path):
             shutil.rmtree(self.path)
-            log.info('Removed %s', self.path)
+            log.debug('Removed %s', self.path)
