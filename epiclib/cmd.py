@@ -4,11 +4,9 @@ Cli base and meta classes.
 '''
 import argparse
 import logging
-import sys
 
-from epic.log import LEVEL_KEYS, init
-from epic import config
-from epic.db import session_scope
+from epiclib.log import LEVEL_KEYS, init
+from epiclib.config import read_config
 
 
 log = logging.getLogger(__name__)
@@ -37,9 +35,11 @@ class CmdMeta(type):
                 epilog='for subcommand help '
                        'run `{} SUBCOMMAND -h`'.format(parser['name'])
             )
-            instance.parser.add_argument('-l', '--loglevel', default='info',
+            instance.parser.add_argument('-l', '--log-level',
                                     choices=LEVEL_KEYS,
-                                    dest='loglevel', help='Set log level.')
+                                    dest='log_level', help='Set log level.')
+            instance.parser.add_argument('--log-file', dest='log_file',
+                                    help='Set log file.')
             instance.parser.add_argument('--version', action='version',
                                     version=parser['version'],
                                     help='print version and exit.')
@@ -74,14 +74,16 @@ class Cmd(object):
     def run(cls):
         args = cls().parser.parse_args()
 
-        if not config.read_config():
-            sys.exit()
+        # Omit parser values of None in order to default to config values
+        # returned from read_config()
+        args = {k: v for k, v in args.__dict__.items() if v is not None}
 
-        init(args.loglevel, config.LOG_FILE)
+        config = read_config()
+        config.update(args)
 
-        with session_scope() as session:
-            args.session = session
-            try:
-                args.func(**args.__dict__)
-            except KeyboardInterrupt:
-                raise SystemExit('\nExiting gracefully on Ctrl-c')
+        init(config['log_level'], config['log_file'])
+
+        try:
+            args['func'](**config)
+        except KeyboardInterrupt:
+            raise SystemExit('\nExiting gracefully on Ctrl-c')

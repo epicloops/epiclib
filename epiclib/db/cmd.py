@@ -4,9 +4,9 @@ epicdb command
 '''
 import logging
 
-import epic.db
-from epic.cmd import Cmd
-from epic import version
+import epiclib
+import epiclib.db
+from epiclib.cmd import Cmd
 
 
 log = logging.getLogger(__name__)
@@ -14,10 +14,10 @@ log = logging.getLogger(__name__)
 
 class EpicdbCmd(Cmd):
 
-    module = epic.db
+    module = epiclib.db
     parser = {
         'name': 'epicdb',
-        'version': version.__version__,
+        'version': epiclib.__version__,
         'desc': module.__doc__,
     }
     subparsers = {

@@ -4,6 +4,7 @@ Basic logging setup.
 '''
 import logging
 
+from epiclib.utils.fms import LocalFM
 
 LEVELS = {
     'debug': logging.DEBUG,

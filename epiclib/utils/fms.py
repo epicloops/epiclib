@@ -9,20 +9,18 @@ import shutil
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 
-from epic import config
-
 
 log = logging.getLogger(__name__)
 
 
 class S3FM(object):
 
-    def __init__(self, crawl_id=None):
-        self.conn = S3Connection(config.AWS_ACCESS_KEY_ID,
-                                 config.AWS_SECRET_ACCESS_KEY,
+    def __init__(self, aws_access_key_id, aws_secret_access_key,
+                 aws_s3_bucket, crawl_id=None):
+
+        self.conn = S3Connection(aws_access_key_id, aws_secret_access_key,
                                  is_secure=False)
-        self.bucket = self.conn.get_bucket(config.AWS_S3_BUCKET,
-                                           validate=False)
+        self.bucket = self.conn.get_bucket(aws_s3_bucket, validate=False)
         self._crawl_id = None
         self.crawl_id = crawl_id
 
@@ -85,8 +83,8 @@ class S3FM(object):
 
 class LocalFM(object):
 
-    def __init__(self):
-        self.path = config.TMP_DIR
+    def __init__(self, path):
+        self.path = path
 
     def abspath(self, path):
         if path.startswith(self.path):

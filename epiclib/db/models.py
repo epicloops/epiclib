@@ -18,8 +18,6 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 
-from epic import config
-
 
 log = logging.getLogger(__name__)
 
@@ -159,11 +157,13 @@ class Sample(Base):
     }
 
     @classmethod
-    def types_to_process(cls):
+    def list_poly_idents(cls, samples=None):
         sample_types = []
         for poly_ident in cls.__mapper__.polymorphic_map:
-            if '{}s'.format(poly_ident) in [s.lower() for s in config.SAMPLES]:
-                sample_types.append(poly_ident)
+            if (samples and
+                '{}s'.format(poly_ident) not in [s.lower() for s in samples]):
+                continue
+            sample_types.append(poly_ident)
         return sample_types
 
 

@@ -11,23 +11,22 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-import epic.config as config
-from epic.db.models import Base
+from epiclib.db.models import Base
 
 
 log = logging.getLogger(__name__)
 
 
-def engine():
-    return create_engine(config.SQLALCHEMY_DATABASE_URI)
+def engine(uri):
+    return create_engine(uri)
 
-def session():
-    return Session(bind=engine())
+def session(uri):
+    return Session(bind=engine(uri))
 
 @contextmanager
-def session_scope():
+def session_scope(uri):
     '''Provide a transactional scope around a series of operations.'''
-    sess = session()
+    sess = session(uri)
     try:
         yield sess
         sess.commit()
@@ -37,18 +36,18 @@ def session_scope():
     finally:
         sess.close()
 
-def create(*args, **kwargs):
+def create(sqlalchemy_database_uri, *args, **kwargs):
     '''Create database schema.'''
-    Base.metadata.create_all(engine())
+    Base.metadata.create_all(engine(sqlalchemy_database_uri))
     log.info('Schema created.')
 
-def truncate(*args, **kwargs):
+def truncate(sqlalchemy_database_uri, *args, **kwargs):
     '''Truncate all tables in database schema.'''
     for tbl in reversed(Base.metadata.sorted_tables):
-        engine().execute(tbl.delete())
+        engine(sqlalchemy_database_uri).execute(tbl.delete())
         log.info('%s truncated.', tbl.name)
 
-def drop(*args, **kwargs):
+def drop(sqlalchemy_database_uri, *args, **kwargs):
     '''Drop database schema.'''
-    Base.metadata.drop_all(engine())
+    Base.metadata.drop_all(engine(sqlalchemy_database_uri))
     log.info('Schema dropped.')
